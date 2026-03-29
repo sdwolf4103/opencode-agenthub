@@ -1,0 +1,44 @@
+# Development and test files
+test/
+scripts/
+_docs/
+_internal/
+package/
+.opencode/
+.opencode-agenthub/
+.opencode-agenthub.user.json
+.envrc
+
+# Root-level analysis / planning artifacts (not for distribution)
+ANALYSIS_INDEX.md
+CODEBASE_ANALYSIS.md
+PLAN_VERIFICATION.md
+RTK_ADVANCED_PATTERNS.md
+SEARCH_METHODOLOGY.md
+TOKEN_TRACKING_TEST_REPORT.md
+AGENTHUB_IMPROVEMENT_PLAN.md
+MIGRATION_GUIDE.md
+RELEASE_SCOPE.md
+repo_map_example.py
+
+# Versioned soul drafts (not for distribution)
+src/composer/library/souls/*_v*.md
+src/composer/library/souls/.opencode/
+
+# Local MCP server workspace artifacts
+src/mcp-servers/node_modules/
+src/mcp-servers/package-lock.json
+src/mcp-servers/bun.lock
+
+# Git
+.git/
+.gitignore
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+
+# Env
+.env
+.env.*

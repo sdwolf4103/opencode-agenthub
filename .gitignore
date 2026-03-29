@@ -1,0 +1,75 @@
+# ===========================
+# opencode-agenthub .gitignore
+# ===========================
+
+# System
+.DS_Store
+**/.DS_Store
+
+# Node / Bun
+node_modules/
+**/node_modules/
+# bun.lock is TRACKED (required by CI --frozen-lockfile)
+package-lock.json
+**/package-lock.json
+
+# Build output
+dist/
+**/dist/
+package/
+*.tgz
+
+# Local-only repo helpers
+.envrc
+PLUGIN_LOADED.txt
+.opencode-agenthub/
+.opencode-agenthub.user.json
+
+# ===========================
+# .opencode/ — selective tracking
+# Dev config files are tracked; everything else is ignored
+# ===========================
+.opencode/
+!.opencode/opencode.jsonc
+!.opencode/package.json
+!.opencode/mcp-servers/
+
+# ===========================
+# Ephemeral agent/tool artifacts
+# ===========================
+# Sisyphus agent run artifacts (evidence, plans, notepads, boulder state)
+.sisyphus/
+**/.sisyphus/
+
+# Harness runtime state directory
+.opencode-harness/
+**/.opencode-harness/
+
+# ===========================
+# Abandoned / quarantined work
+# ===========================
+_quarantine/
+
+# ===========================
+# Pipeline outputs / knowledge artifacts
+# ===========================
+.opencode/knowledge/*/
+!.opencode/knowledge/.gitkeep
+!.opencode/knowledge/evidence/.gitkeep
+
+# ===========================
+# Logs and temporary files
+# ===========================
+*.log
+*.tmp
+*.bak
+
+# ===========================
+# Internal research / drafts (not for public repo)
+# ===========================
+_internal/
+docs/superpowers/
+_docs/.DS_Store
+_docs/.Rhistory
+.opencode
+.opencode-composer/

@@ -1,0 +1,17 @@
+{
+  "name": "build",
+  "runtime": "native",
+  "soul": "build",
+  "skills": [],
+  "mcp": [],
+  "agent": {
+    "name": "build",
+    "mode": "primary",
+    "hidden": false,
+    "model": "github-copilot/gpt-5",
+    "description": "Execution-focused coding agent with strong completion and verification discipline",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "hr-sourcer",
+  "runtime": "native",
+  "soul": "hr-sourcer",
+  "instructions": [
+    "hr-boundaries"
+  ],
+  "skills": [],
+  "mcp": [],
+  "guards": [
+    "no_task",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr-sourcer",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "github-copilot/gpt-5",
+    "description": "Scans configured GitHub repos, refreshes local inventory worker cards, and classifies discovered agents and skills.",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

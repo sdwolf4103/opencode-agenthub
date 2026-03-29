@@ -1,0 +1,26 @@
+{
+  "name": "hr-evaluator",
+  "runtime": "native",
+  "soul": "hr-evaluator",
+  "instructions": [
+    "hr-boundaries"
+  ],
+  "skills": [
+    "hr-review"
+  ],
+  "mcp": [],
+  "guards": [
+    "no_task",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr-evaluator",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "github-copilot/claude-opus-4.6",
+    "description": "Reviews local inventory candidates for risk, compatibility, testing readiness, and description clarity.",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

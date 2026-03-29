@@ -1,0 +1,9 @@
+{
+  "name": "auto",
+  "description": "Minimal native profile with the default Auto coding agent plus Plan and Build",
+  "bundles": ["auto", "plan", "build"],
+  "defaultAgent": "auto",
+  "plugins": [
+    "opencode-agenthub"
+  ]
+}

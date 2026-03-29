@@ -1,0 +1,139 @@
+{
+  "enabled": true,
+  "bundles": ["auto"],
+  "queueVisibleReminder": true,
+  "queueVisibleReminderTemplate": "[agenthub] Auto-mode workflow reminder injected for this turn.",
+  "maxInjectionsPerSession": 3,
+  "scanLineLimit": 5,
+  "scanCharLimit": 800,
+  "defaults": {
+    "match": "any",
+    "useIDetectFallback": true,
+    "reminderPrefix": [
+      "Keep the user's current task, constraints, and repo context as the source of truth."
+    ],
+    "reminderSuffix": [
+      "Do not restart the task or replace the answer format.",
+      "Include exactly one short line: workflow-received"
+    ]
+  },
+  "modes": {
+    "brainstorm": {
+      "description": "Idea exploration and option generation",
+      "reminderPrefix": [
+        "WORKFLOW_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Brainstorm Workflow Received]",
+       "1. Context Check: Analyze current project state, files, and recent commits.",
+       "2. Clarify: Confirm goals, constraints, and success criteria for the idea.",
+       "3. Propose: Present 2-3 distinct technical approaches with trade-offs.",
+       "4. Design: Detail the chosen architecture, components, and data flow.",
+       "--- Core Rules ---",
+       "No Code First: Never implement code during the brainstorming phase.",
+       "YAGNI: Ruthlessly eliminate unnecessary features or complexity.",
+       "Sign-off: Get explicit verbal approval on the design before moving to execution.",
+       "Architecture Priority: Focus on structural integrity and system integration."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Brainstorm workflow reminder injected."
+    },
+    "plan": {
+      "description": "Structured execution planning",
+      "reminderPrefix": [
+        "PLAN_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Plan Workflow Received]",
+       "1. Research: Map the current project state, dependencies, and affected files.",
+       "Can fire 1-2 explore subagents to help with research.",
+       "2. Roadmap: Break the implementation into atomic, sequential tasks (stages).",
+       "3. Technical Specs: Detail specific API changes, data models, or structural logic.",
+       "4. Validation Plan: Define test cases and verification criteria for each stage.",
+       "--- Core Rules ---",
+       "Decision-Complete: The plan must contain enough detail for any agent to execute without ambiguity.",
+       "Validation-Centric: Every stage must have a concrete 'Definition of Done' and validation step.",
+       "No Coding: Strictly output the plan only; do not initiate implementation code."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Plan workflow reminder injected."
+    },
+    "assess": {
+      "description": "Assessment and evaluation",
+      "reminderPrefix": [
+        "WORKFLOW_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Assess Workflow Received]",
+       "1. Research: assess the current project state, dependencies, and users true intent.",
+       "Can fire 1-2 explore subagents to help with research.",
+       "2. Analysis: Evaluate the problem against project standards, performance metrics, and user requirements.",
+       "3. Verdict: Deliver a clear assessment with confidence level and reasoning.",
+       "4. Recommendations: Propose specific, actionable improvements or fixes.",
+       "--- Core Rules ---",
+       "Evidence-Based: Base all conclusions on concrete data from the codebase, not assumptions.",
+       "No Speculation: If information is insufficient, state 'Insufficient Data' rather than guessing.",
+       "Actionable Insights: Recommendations must be specific enough for an agent to implement directly.",
+       "Balanced View: Acknowledge both risks and benefits of any proposed changes."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Assess workflow reminder injected."
+    },
+    "debug": {
+      "description": "Bug diagnosis and root-cause analysis",
+      "reminderPrefix": [
+        "WORKFLOW_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Debug Workflow Received]",
+       "1. Triage: Reproduce the bug and track the execution path from symptom to root cause",
+       "2. Fix: Implement the minimal, surgical change required to resolve the issue.",
+       "3. Verify: Create a regression test to validate the fix and prevent future occurrences.",
+       "--- Core Rules ---",
+       "Evidence-First: Do not propose a fix until the root cause is traced and confirmed.",
+       "Minimalism: Apply the smallest possible fix that is correct and idiomatic.",
+       "Zero Regressions: Every fix must be validated with an automated test case.",
+       "No Speculation: If the cause is unclear, continue investigation rather than guessing."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Debug workflow reminder injected."
+    },
+    "understand": {
+      "description": "Understand the current project state, dependencies, and users true intent.",
+      "reminderPrefix": [
+        "WORKFLOW_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Understand Workflow Received]",
+       "1. Clarify: clarify user's ture intent.",
+       "2. Research: Fire 0-1 explore subagents to help with research if needed.",
+       "3. Analysis: Analyze the results from the research.",
+       "4. Report: Deliver a clear assessment with confidence level and reasoning.",
+       "--- Core Rules ---",
+       "1. No Code First: Never implement code during the understanding phase."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Understand workflow reminder injected."
+    },
+    "implement": {
+      "description": "Implement the user's request.",
+      "label": "Implementation",
+      "reminderPrefix": [
+        "WORKFLOW_INJECTION_TEST_ACTIVE"
+      ],
+      "reminder": [
+       "--- Workflow ---",
+       "0. Report: [Implement Workflow Received]",
+       "1. **Inspect** — Read the target code and trace the execution path before forming a hypothesis.",
+       "2. **Evaluate** — Is this the best practice? Consider what the current implementation provides that the replacement doesn't — **STOP** and offer alternatives.",
+       "3. **Execute** — Make the smallest correct change.",
+       "4. **Verify** — Run tests. Report what passed.",
+       "--- Thoroughness ---",
+       "After fixing, check the error handling around your fix — are errors logged or silently swallowed?",
+       "--- Report ---",
+       "what you found and fixed, why, and what you verified."
+      ],
+      "queueVisibleReminderTemplate": "[agenthub] Implementation workflow reminder injected."
+    }
+  }
+}

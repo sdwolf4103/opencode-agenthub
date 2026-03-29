@@ -1,0 +1,18 @@
+{
+  "name": "auto",
+  "runtime": "native",
+  "soul": "auto",
+  "skills": [],
+  "mcp": [],
+  "guards": ["no_omo"],
+  "agent": {
+    "name": "auto",
+    "mode": "primary",
+    "hidden": false,
+    "model": "github-copilot/claude-sonnet-4.5",
+    "description": "Default coding agent with OMO-style intent detection and native build/edit/test workflow",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "hr-verifier",
+  "runtime": "native",
+  "soul": "hr-verifier",
+  "instructions": [
+    "hr-boundaries"
+  ],
+  "skills": [
+    "hr-final-check"
+  ],
+  "mcp": [],
+  "guards": [
+    "no_task",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr-verifier",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "github-copilot/claude-sonnet-4.6",
+    "description": "Runs final package QA for clarity, safety, and import readiness before human confirmation.",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

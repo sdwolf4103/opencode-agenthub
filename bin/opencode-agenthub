@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BUILT="$REPO_ROOT/dist/composer/opencode-profile.js"
+
+if [ -f "$BUILT" ]; then
+  exec node "$BUILT" "$@"
+fi
+
+if [ ! -d "$REPO_ROOT/node_modules" ]; then
+  printf "[bin/opencode-agenthub] node_modules not found. Run 'bun install' first.\n" >&2
+  exit 1
+fi
+
+printf "[bin/opencode-agenthub] dist/ not found. Building once before running...\n" >&2
+(cd "$REPO_ROOT" && node scripts/build.mjs) >&2
+
+exec node "$BUILT" "$@"

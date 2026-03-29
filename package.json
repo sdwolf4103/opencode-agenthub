@@ -1,0 +1,54 @@
+{
+  "name": "opencode-agenthub",
+  "version": "0.1.0",
+  "description": "A control plane for organizing, composing, and activating OpenCode agents, skills, profiles, and bundles.",
+  "type": "module",
+  "main": "./dist/plugins/opencode-agenthub.js",
+  "exports": {
+    ".": "./dist/plugins/opencode-agenthub.js",
+    "./question": "./dist/plugins/opencode-question.js"
+  },
+  "bin": {
+    "agenthub": "dist/composer/opencode-profile.js",
+    "opencode-agenthub": "dist/composer/opencode-profile.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test:smoke": "bun test test/smoke-*.test.ts",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist/"
+  ],
+  "keywords": [
+    "opencode",
+    "agents",
+    "agenthub",
+    "skills",
+    "mcp",
+    "workflow",
+    "llm",
+    "ai-agents"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sdwolf4103/opencode-agenthub.git"
+  },
+  "homepage": "https://github.com/sdwolf4103/opencode-agenthub#readme",
+  "bugs": {
+    "url": "https://github.com/sdwolf4103/opencode-agenthub/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "bun@1.3.9",
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  }
+}

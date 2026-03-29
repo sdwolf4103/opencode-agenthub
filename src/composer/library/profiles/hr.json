@@ -1,0 +1,9 @@
+{
+  "name": "hr",
+  "description": "Native HR console for staffing, candidate review, CTO architecture discussion, and Agent Hub package staging",
+  "bundles": ["hr", "hr-planner", "hr-sourcer", "hr-evaluator", "hr-cto", "hr-adapter", "hr-verifier", "auto", "plan", "build"],
+  "defaultAgent": "hr",
+  "plugins": [
+    "opencode-agenthub"
+  ]
+}

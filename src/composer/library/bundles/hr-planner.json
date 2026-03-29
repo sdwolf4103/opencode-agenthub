@@ -1,0 +1,26 @@
+{
+  "name": "hr-planner",
+  "runtime": "native",
+  "soul": "hr-planner",
+  "instructions": [
+    "hr-boundaries"
+  ],
+  "skills": [
+    "hr-staffing"
+  ],
+  "mcp": [],
+  "guards": [
+    "no_task",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr-planner",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "github-copilot/gpt-5",
+    "description": "Builds the staffing-plan deliverable after requirements are confirmed, including options, draft naming, and initial model recommendations.",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}

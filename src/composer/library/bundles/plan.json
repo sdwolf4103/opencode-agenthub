@@ -1,0 +1,19 @@
+{
+  "name": "plan",
+  "runtime": "native",
+  "soul": "plan",
+  "skills": [],
+  "mcp": [],
+  "agent": {
+    "name": "plan",
+    "mode": "primary",
+    "hidden": false,
+    "model": "github-copilot/claude-sonnet-4.5",
+    "description": "Read-only planning agent for repo-grounded implementation plans",
+    "permission": {
+      "*": "allow",
+      "edit": "ask",
+      "bash": "ask"
+    }
+  }
+}

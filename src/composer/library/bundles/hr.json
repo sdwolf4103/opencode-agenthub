@@ -1,0 +1,35 @@
+{
+  "name": "hr",
+  "runtime": "native",
+  "soul": "hr",
+  "instructions": [
+    "hr-boundaries",
+    "hr-protocol"
+  ],
+  "skills": [],
+  "mcp": [],
+  "guards": [
+    "read_only",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr",
+    "mode": "primary",
+    "hidden": false,
+    "steps": 3,
+    "model": "github-copilot/gpt-5",
+    "description": "Primary HR orchestration console that gathers requirements, keeps stage gates, dispatches hidden HR workers, and reports important decisions back to the user.",
+    "permission": {
+      "*": "allow",
+      "task": {
+        "*": "deny",
+        "hr-planner": "allow",
+        "hr-sourcer": "allow",
+        "hr-evaluator": "allow",
+        "hr-cto": "allow",
+        "hr-adapter": "allow",
+        "hr-verifier": "allow"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "hr-cto",
+  "runtime": "native",
+  "soul": "hr-cto",
+  "instructions": [
+    "hr-boundaries"
+  ],
+  "skills": [],
+  "mcp": [],
+  "guards": [
+    "no_task",
+    "no_omo"
+  ],
+  "agent": {
+    "name": "hr-cto",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "github-copilot/gpt-5",
+    "description": "CTO-style architecture reviewer for staffing structure, role overlap, and downstream composition choices.",
+    "permission": {
+      "*": "allow"
+    }
+  }
+}
