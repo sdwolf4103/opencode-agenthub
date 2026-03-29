@@ -69,7 +69,7 @@ Keep `final-checklist.md` compact and explicit. Use this shape:
 | descriptions are operator-readable | pass/fail |
 | MCP registrations resolve to staged servers or blocker | pass/fail |
 | handoff clearly separates test/use/promote | pass/fail |
-| model preferences were explicitly collected | pass/fail |
+| model preferences were confirmed before assembly | pass/fail |
 | final names were user-confirmed | pass/fail |
 | specialized work was delegated | pass/fail |
 | staged model ids validated against synced catalog | pass/fail |

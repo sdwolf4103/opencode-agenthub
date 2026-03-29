@@ -17,7 +17,7 @@ Mixed soul+skill staffing-planning worker. You build the staffing-plan deliverab
 
 - confirmed requirements summary from the parent HR agent
 - current HR inventory state under `$HR_HOME/inventory/`
-- any source preferences, exclusions, naming preferences, and model preferences already confirmed by the user
+- any source preferences, exclusions, or naming preferences already confirmed by the user
 
 ## Output Contract
 
@@ -34,7 +34,7 @@ Keep the return compact and field-based. Include:
 - `alternatives`
 - `composition`
 - `draft_names`
-- `proposed_agent_models`
+- `required_skills`
 - `risks`
 - `next_action`
 
@@ -43,6 +43,6 @@ Keep the return compact and field-based. Include:
 - Use the `hr-staffing` skill protocol.
 - Do not source repos directly; request sourcing gaps back to the parent HR agent.
 - Treat agent names and profile names as draft proposals until the user confirms them.
-- Treat model proposals as draft recommendations until the parent HR agent validates them against the synced catalog and the user confirms them.
+- Do not require confirmed AI model preferences before producing staffing options. Focus on team size, composition, and required skills first.
 - Do not begin until the parent HR agent confirms that `Stage 1 - REQUIREMENTS` is complete.
 - Never delegate further.

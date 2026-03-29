@@ -42,6 +42,7 @@ $HR_HOME/staging/<package-id>/
 - If a staged profile sets `defaultAgent`, it must use the staged bundle's `agent.name` value, not the bundle filename. This matters when bundle filenames are namespaced but `agent.name` is shorter.
 - Before final assembly, confirm whether the operator wants to keep default opencode agents such as `general`, `explore`, `plan`, and `build`. If not, the staged profile must set `"nativeAgentPolicy": "team-only"`. This suppresses host native agent merges and emits `disable: true` overrides for default opencode agents that are not supplied by the staged team itself.
 - Before final assembly, confirm whether the promoted profile should become the default personal profile for future bare `agenthub start` runs. Record that choice in `handoff.json` under `promotion_preferences.set_default_profile`.
+- If AI models are still unresolved when final assembly begins, stop and confirm the exact model choice here before writing staged agent defaults.
 - If the operator specifies a model variant such as `xhigh`, `high`, or `thinking`, store it canonically as `agent.model: "provider/model"` plus `agent.variant: "..."`. For backward compatibility, combined strings like `"provider/model xhigh"` may still be accepted on read, but staged output should prefer the split form.
 - The package must be promotable by:
 

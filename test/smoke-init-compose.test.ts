@@ -2402,14 +2402,15 @@ test("interactive HR bootstrap strips Windows mouse-tracking escape noise", asyn
 				XDG_CONFIG_HOME: xdgHomeDir,
 				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
 			},
-			input: "\u001b[<35;24;14mstaff\naccept\n",
+			input: "\u001b[<35;24;14maccept\n",
 		});
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("[PROCESS]");
-		expect(result.stdout).toContain("[REQUIREMENTS]");
 		expect(result.stdout).toContain("[ASSESSMENT]");
 		expect(result.stdout).toContain("[RECOMMENDATION]");
+		expect(result.stdout).not.toContain("[PROCESS]");
+		expect(result.stdout).not.toContain("[REQUIREMENTS]");
+		expect(result.stdout).not.toContain("HR situation");
 		expect(result.stdout).not.toContain("35;24;14m");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.agents.hr.model).toBe("openai/gpt-5.4-mini");
@@ -2451,15 +2452,16 @@ test("interactive hr bootstrap recommends a fallback after assessing available r
 				XDG_CONFIG_HOME: xdgHomeDir,
 				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
 			},
-			input: "staff\naccept\n",
+			input: "accept\n",
 		});
 
 		expect(result.code).toBe(0);
 		expect(result.stdout).toContain("[ASSESSMENT]");
-		expect(result.stdout).toContain("Today: staff a new team");
 		expect(result.stdout).toContain("Model 'openai/gpt-5.4-mini' is not available");
 		expect(result.stdout).toContain("[RECOMMENDATION]");
 		expect(result.stdout).toContain("I recommend starting with the best available free HR model");
+		expect(result.stdout).not.toContain("Today:");
+		expect(result.stdout).not.toContain("HR situation");
 		expect(result.stdout).toContain("Apply this recommendation now");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.meta.onboarding.modelStrategy).toBe("free");
@@ -2501,12 +2503,13 @@ test("interactive hr bootstrap re-prompts until custom model id is valid", async
 				XDG_CONFIG_HOME: xdgHomeDir,
 				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
 			},
-			input: "review\ncustom\nbadmodel\nopenai/gpt-5.4-mini\n",
+			input: "custom\nbadmodel\nopenai/gpt-5.4-mini\n",
 		});
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("Today: review and refine an existing team");
 		expect(result.stdout).toContain("Apply this recommendation now");
+		expect(result.stdout).not.toContain("Today:");
+		expect(result.stdout).not.toContain("HR situation");
 		expect(result.stdout).toContain("Model id must use provider/model format.");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.meta.onboarding.modelStrategy).toBe("custom");
@@ -3004,7 +3007,9 @@ test("hr primary prompt includes protocol instruction and runtime blocks write t
 		if (!configRoot) throw new Error("Expected config root output from hr --assemble-only");
 		const prompt = await readFile(path.join(configRoot, "agents", "hr.md"), "utf8");
 		expect(prompt).toContain("## Attached Instruction: hr-protocol");
-		expect(prompt).toContain("AI model preferences");
+		expect(prompt).toContain("primary use cases or scenarios");
+		expect(prompt).toContain("Before staging begins, explicitly confirm the AI model choice");
+		expect(prompt).not.toContain("AI model preferences");
 		const opencodeConfig = parseGeneratedJson(
 			await readFile(path.join(configRoot, "opencode.jsonc"), "utf8"),
 		);

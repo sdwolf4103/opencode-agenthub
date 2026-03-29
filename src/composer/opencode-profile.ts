@@ -1099,8 +1099,6 @@ type HrModelCheckResult =
 			message: string;
 	  };
 
-type HrBootstrapIntent = "staff" | "review" | "prototype";
-
 type HrBootstrapResourceAssessment = {
 	configuredGithubSources: number | null;
 	configuredModelCatalogSources: number | null;
@@ -1115,12 +1113,6 @@ type HrBootstrapRecommendation = {
 	strategy: "recommended" | "free" | "custom" | "native";
 	summary: string;
 	reason: string;
-};
-
-const hrBootstrapIntentSummary: Record<HrBootstrapIntent, string> = {
-	staff: "staff a new team",
-	review: "review and refine an existing team",
-	prototype: "prototype an HR setup before deeper staffing work",
 };
 
 const formatCountLabel = (
@@ -1193,34 +1185,11 @@ const recommendHrBootstrapSelection = (
 	};
 };
 
-const printHrBootstrapProcess = () => {
-	process.stdout.write("\n[PROCESS]\n");
-	process.stdout.write("- REQUIREMENTS -> understand your current HR situation\n");
-	process.stdout.write("- STAFFING PLAN -> inspect resources and default direction\n");
-	process.stdout.write("- CANDIDATE REVIEW -> compare safer model/setup choices\n");
-	process.stdout.write("- ARCHITECTURE REVIEW -> confirm the HR console setup\n");
-	process.stdout.write("- STAGING & CONFIRMATION -> write settings only after recommendation\n\n");
-};
-
-const promptHrBootstrapIntent = async (
-	rl: readline.Interface,
-): Promise<HrBootstrapIntent> => {
-	process.stdout.write("[REQUIREMENTS]\n");
-	process.stdout.write("Before we ask for detailed model choices, tell HR what kind of situation you are in today.\n");
-	return promptChoice(
-		rl,
-		"HR situation",
-		["staff", "review", "prototype"] as const,
-		"staff",
-	);
-};
-
 const printHrBootstrapAssessment = (
-	intent: HrBootstrapIntent,
 	resources: HrBootstrapResourceAssessment,
 	recommendation: HrBootstrapRecommendation,
 ) => {
-	process.stdout.write(`\n[ASSESSMENT]\nToday: ${hrBootstrapIntentSummary[intent]}\n`);
+	process.stdout.write("\n[ASSESSMENT]\n");
 	process.stdout.write(
 		`- Configured HR sources: ${formatCountLabel(resources.configuredGithubSources, "GitHub repo")} + ${formatCountLabel(resources.configuredModelCatalogSources, "model catalog")}\n`,
 	);
@@ -1374,11 +1343,9 @@ const promptHrBootstrapModelSelection = async (
 	const rl = createPromptInterface();
 	try {
 		process.stdout.write("\nFirst-time HR Office setup\n");
-		printHrBootstrapProcess();
-		const intent = await promptHrBootstrapIntent(rl);
 		const resources = await inspectHrBootstrapResources(hrRoot);
 		const recommendation = recommendHrBootstrapSelection(resources);
-		printHrBootstrapAssessment(intent, resources, recommendation);
+		printHrBootstrapAssessment(resources, recommendation);
 		while (true) {
 			const action = await promptChoice(
 				rl,

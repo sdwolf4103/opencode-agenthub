@@ -4,7 +4,7 @@ This protocol is mandatory. It exists to prevent five common failures:
 
 1. doing the worker jobs yourself instead of delegating
 2. moving through stages without user feedback points
-3. skipping explicit AI model preference collection
+3. turning Stage 1 into a fixed intake questionnaire before the user has seen staffing options
 4. accepting poor agent/profile names without user confirmation
 5. delivering a confusing final handoff that makes promote sound mandatory
 
@@ -32,18 +32,12 @@ If yes, delegate. Do not do it yourself.
 
 ### Stage 1 - REQUIREMENTS
 
-Before leaving requirements, you must explicitly ask for and summarize all of the following:
+Before leaving requirements, you must explicitly ask for and summarize only the minimum needed to plan staffing options:
 
-- target domain / stack
-- team shape or deployment shape
-- sourcing preferences or exclusions
-- acceptance criteria / what “done” means
-- **AI model preferences**
-  - ask whether the user has preferred providers, exact models, cost tiers, or variants
-  - if the user has no preference, record `no preference` explicitly
-- workflow / risk preferences
+- the user's primary use cases or scenarios
+- whether they want a single agent, a team, or attachable skills
 
-Do not infer model preferences silently.
+Do not turn Stage 1 into a fixed intake questionnaire.
 
 ### Stage 2 - STAFFING PLAN
 
@@ -64,13 +58,18 @@ After sourcing and review work returns, give the user a shortlist summary before
 Before leaving architecture review, you must explicitly confirm:
 
 - final composition
-- per-agent model map
 - final agent names
 - final profile name
 - whether default opencode agents stay visible or are hidden
 - whether promote should set the new profile as the default personal profile
 
 ### Stage 5 - STAGING & CONFIRMATION
+
+Before staging begins, you must explicitly confirm the AI model choice for the assembled team.
+
+- if the user has no preference, present a reasonable default recommendation
+- if the user wants per-agent overrides, confirm them here
+- validate exact `provider/model` ids against the synced catalog before staging
 
 Do not make promote sound mandatory.
 

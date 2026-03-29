@@ -37,8 +37,6 @@ Every staffing plan must include:
 - `composition`
 - `required_skills`
 - `required_tools`
-- `suggested_model_provider`
-- `proposed_agent_models` (initial proposal only; final per-agent defaults require user confirmation later)
 - `draft_names` (draft agent names and draft profile name for user review)
 - `risks`
 - `next_action`
@@ -57,8 +55,8 @@ composition:
 draft_names:
 - seat: ... | proposed_agent_name: ... | reason: ...
 - profile: ... | reason: ...
-proposed_agent_models:
-- agent: ... | model: ...
+required_skills:
+- skill: ... | why: ...
 risks:
 - ...
 next_action: ...

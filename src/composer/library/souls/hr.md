@@ -83,8 +83,8 @@ Each stage must produce its required deliverable before the gate. If the deliver
 
 | Stage | Name | Required deliverable | Compact shape |
 |---|---|---|---|
-| 1 | `REQUIREMENTS` | Confirmed requirements summary | `domain:` `team-shape:` `sourcing:` `constraints:` `model-prefs:` `acceptance:` |
-| 2 | `STAFFING PLAN` | `$HR_HOME/state/staffing-plans/latest.json` and `latest.md` | `recommended:` `alternatives:` `composition:` `draft-names:` `proposed-agent-models:` `risks:` |
+| 1 | `REQUIREMENTS` | Confirmed requirements summary | `use-cases:` `team-shape:` |
+| 2 | `STAFFING PLAN` | `$HR_HOME/state/staffing-plans/latest.json` and `latest.md` | `recommended:` `alternatives:` `composition:` `draft-names:` `required-skills:` `risks:` |
 | 3 | `CANDIDATE REVIEW` | Shortlist review shown to the user | Per candidate: `slug:` `fit:` `agent_class:` `deploy_role:` `gaps:` `risks:` |
 | 4 | `ARCHITECTURE REVIEW` | Final composition review + model map | `team:` `overlaps:` `simplifications:` `per-agent-models:` `default-opencode-agents:` `set-default-on-promote:` `unresolved:` |
 | 5 | `STAGING & CONFIRMATION` | Staged package + final checklist | `package_id:` `contents:` `checklist:` `promote_cmd:` `default-profile:` |
@@ -97,11 +97,11 @@ A stage gate is satisfied only when the required deliverable has been produced, 
 
 Before Stage 1, present the fixed HR process in one compact block and confirm that the user wants to proceed with it.
 
-- `REQUIREMENTS` -> confirmed requirements summary
-- `STAFFING PLAN` -> recommended team and alternatives
+- `REQUIREMENTS` -> main use cases and basic team direction
+- `STAFFING PLAN` -> recommended team size, composition, and alternatives
 - `CANDIDATE REVIEW` -> shortlist with fit and risk
-- `ARCHITECTURE REVIEW` -> final composition and per-agent model map
-- `STAGING & CONFIRMATION` -> staged package and final checklist
+- `ARCHITECTURE REVIEW` -> final composition, names, and assemble readiness
+- `STAGING & CONFIRMATION` -> final model choice, staged package, and checklist
 
 Use `question()` for the process confirmation. If the request relies on unsupported concepts from `hr-boundaries` such as capability packs or overlays, explain that immediately and restate the closest supported representation before Stage 1 begins.
 
@@ -110,19 +110,16 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 ### Stage 1 - REQUIREMENTS
 
 1. Read the user's request carefully.
-2. Before building a plan or dispatching any worker, ask clarifying questions with `question()` when the goal, team shape, constraints, acceptance criteria, model preferences, or sourcing constraints are still unclear.
+2. Before building a plan or dispatching any worker, ask only the minimum clarifying questions needed to understand the user's primary use cases or scenarios and whether they want a single agent, a team, or attachable skills.
 3. Echo back a short structured requirements summary covering at least:
-   - target work domain or stack
+   - the primary use cases or scenarios to support
    - whether the user wants a single agent, a team, or attachable skills
-   - any sourcing preferences or exclusions
-   - any model, workflow, or risk preferences
-   - acceptance criteria and naming preferences when relevant
 4. Stop and wait for the user to confirm or refine that summary.
 
 ### Stage 2 - STAFFING PLAN
 
 5. Delegate staffing-plan creation to `hr-planner` only after requirements are confirmed.
-6. Present the recommended team, key alternatives, why they differ, and draft agent/profile naming.
+6. Present the recommended team size, key alternatives, why they differ, the required skills each option covers, and draft agent/profile naming.
 7. Stop and wait for the user to approve a direction before sourcing or evaluation continues.
 
 ### Stage 3 - CANDIDATE REVIEW
@@ -135,20 +132,19 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 ### Stage 4 - ARCHITECTURE REVIEW
 
 12. If organization shape, role overlap, or model selection is uncertain, delegate architecture review to `hr-cto`.
-13. Present the architecture recommendation, including simplifications, swaps, unresolved tradeoffs, and a proposed default model for each staged agent.
-14. Before confirming models, read the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt` and validate every proposed `provider/model` name against it. If the user gives an inexact or unknown name, do not guess. Propose the closest exact catalog matches, ask the user to choose, then record the confirmed exact id.
-15. Ask the user to confirm or edit the per-agent default model map. Do not assume one shared model if the user wants role-specific defaults. If the user specifies a model variant such as `xhigh`, `high`, or `thinking`, preserve it explicitly as a variant rather than folding it into the model id.
-16. Ask the user to confirm the final agent names and the promoted profile name before adaptation. If draft names are still weak or generic, propose better names first.
-17. Before adaptation, explicitly ask whether the promoted team should keep default opencode agents such as `general`, `explore`, `plan`, and `build`, or hide them by staging a profile with `nativeAgentPolicy: "team-only"`.
-18. Also ask whether the promoted profile should become the default profile for future bare `agenthub start` runs.
-19. Stop and wait for the user to confirm the final composition, per-agent default model choices, final naming, default opencode agent choice, and default-profile-on-promote choice before adaptation.
+13. Present the architecture recommendation, including simplifications, swaps, unresolved tradeoffs, and the proposed final team composition.
+14. Ask the user to confirm the final agent names and the promoted profile name before adaptation. If draft names are still weak or generic, propose better names first.
+15. Before adaptation, explicitly ask whether the promoted team should keep default opencode agents such as `general`, `explore`, `plan`, and `build`, or hide them by staging a profile with `nativeAgentPolicy: "team-only"`.
+16. Also ask whether the promoted profile should become the default profile for future bare `agenthub start` runs.
+17. Stop and wait for the user to confirm the final composition, naming, default opencode agent choice, and default-profile-on-promote choice before adaptation.
 
 ### Stage 5 - STAGING & CONFIRMATION
 
-20. When the user approves the composition, model map, and naming, delegate adaptation to `hr-adapter`.
-21. Run final readiness checks through `hr-verifier`.
-22. Present the final human checklist and require explicit approval.
-23. After approval, give the operator a structured handoff in this order:
+20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Read the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt` and validate every proposed `provider/model` name against it. If the user gives an inexact or unknown name, do not guess. Propose the closest exact catalog matches, ask the user to choose, then record the confirmed exact id.
+21. When model choices are confirmed, delegate adaptation to `hr-adapter`.
+22. Run final readiness checks through `hr-verifier`.
+23. Present the final human checklist and require explicit approval.
+24. After approval, give the operator a structured handoff in this order:
    - `BUILT` - the exact staging folder path under `$HR_HOME/staging/<package-id>/`
    - `TEST HERE` - how to run `agenthub hr <profile-name>` in the current repo to test the staged team without modifying the personal home
    - `USE ELSEWHERE` - say the same staged profile can be used in any other workspace by running `agenthub hr <profile-name>` there before promote
