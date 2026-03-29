@@ -1,6 +1,6 @@
 {
   "name": "opencode-agenthub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A control plane for organizing, composing, and activating OpenCode agents, skills, profiles, and bundles.",
   "type": "module",
   "main": "./dist/plugins/opencode-agenthub.js",
