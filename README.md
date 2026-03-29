@@ -1,5 +1,8 @@
 # opencode-agenthub
 
+[![npm version](https://img.shields.io/npm/v/opencode-agenthub.svg)](https://www.npmjs.com/package/opencode-agenthub)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Requires Node >= 18.0.0. Supports macOS and Linux directly. Windows users should use WSL 2 for the best experience; native Windows support remains best-effort alpha.
 
 `opencode-agenthub` is a control plane and CLI for organizing, composing, and activating OpenCode agents, skills, profiles, bundles, and workspace runtime setup.
