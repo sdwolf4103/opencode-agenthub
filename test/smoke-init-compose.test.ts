@@ -1992,6 +1992,161 @@ test("composeWorkspace requires explicit defaultAgent for team-only profiles", a
 	}
 });
 
+test("composeWorkspace rejects team-only profiles when every staged agent is a subagent", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-team-only-all-subagents-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		const workspace = path.join(tempRoot, "workspace");
+
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" }),
+		]);
+
+		await writeFile(path.join(agentHubHome, "souls", "reviewer.md"), "# reviewer\n", "utf8");
+		await writeFile(
+			path.join(agentHubHome, "bundles", "reviewer.json"),
+			`${JSON.stringify({
+				name: "reviewer",
+				runtime: "native",
+				soul: "reviewer",
+				skills: [],
+				agent: {
+					name: "reviewer",
+					mode: "subagent",
+					model: "team-model",
+					description: "Reviewer",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "profiles", "review-team.json"),
+			`${JSON.stringify({
+				name: "review-team",
+				bundles: ["reviewer"],
+				defaultAgent: "reviewer",
+				plugins: ["opencode-agenthub"],
+				nativeAgentPolicy: "team-only",
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = agentHubHome;
+
+		await expect(composeWorkspace(workspace, "review-team")).rejects.toThrow(
+			/defaultAgent .* must point to a primary agent/i,
+		);
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
+
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("composeWorkspace rejects defaultAgent that points to a subagent in team-only mode", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-team-only-subagent-default-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		const workspace = path.join(tempRoot, "workspace");
+
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" }),
+		]);
+
+		await writeFile(path.join(agentHubHome, "souls", "host.md"), "# host\n", "utf8");
+		await writeFile(path.join(agentHubHome, "souls", "reviewer.md"), "# reviewer\n", "utf8");
+		await writeFile(
+			path.join(agentHubHome, "bundles", "host.json"),
+			`${JSON.stringify({
+				name: "host",
+				runtime: "native",
+				soul: "host",
+				skills: [],
+				agent: {
+					name: "host",
+					mode: "primary",
+					model: "team-model",
+					description: "Host",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "bundles", "reviewer.json"),
+			`${JSON.stringify({
+				name: "reviewer",
+				runtime: "native",
+				soul: "reviewer",
+				skills: [],
+				agent: {
+					name: "reviewer",
+					mode: "subagent",
+					model: "team-model",
+					description: "Reviewer",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "profiles", "review-team.json"),
+			`${JSON.stringify({
+				name: "review-team",
+				bundles: ["host", "reviewer"],
+				defaultAgent: "reviewer",
+				plugins: ["opencode-agenthub"],
+				nativeAgentPolicy: "team-only",
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = agentHubHome;
+
+		await expect(composeWorkspace(workspace, "review-team")).rejects.toThrow(
+			/defaultAgent .* must point to a primary agent/i,
+		);
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
+
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test("doctor createProfile defaults to the first bundle agent.name", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-default-agent-"));
 	try {

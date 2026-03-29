@@ -55,3 +55,20 @@ test("HR protocol moves default-profile choice to final staging and forbids mode
 	expect(hrAdapter).toContain("If the synced model catalog is empty or missing, do not write any `agent.model` value.");
 	expect(hrBoundaries).toContain("no HR agent may propose, fill in, or confirm a concrete `provider/model` id");
 });
+
+test("HR composition rules require a visible primary agent and prefer pure soul plus skill hosts", async () => {
+	const [hrSoul, hrCto, hrAssembly, hrFinalCheck, hrStaffing] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/composer/library/souls/hr-cto.md"),
+		readRepoFile("src/skills/hr-assembly/SKILL.md"),
+		readRepoFile("src/skills/hr-final-check/SKILL.md"),
+		readRepoFile("src/skills/hr-staffing/SKILL.md"),
+	]);
+
+	expect(hrSoul).toContain("Every assembled team must include at least one agent with `deployment_role: primary-capable`");
+	expect(hrCto).toContain("Does the team have at least one primary-capable agent?");
+	expect(hrAssembly).toContain("MUST verify the staged bundle set includes at least one `agent.mode: \"primary\"` agent that is not hidden");
+	expect(hrFinalCheck).toContain("team includes at least one primary, non-hidden agent");
+	expect(hrStaffing).toContain("At least one staffing-plan entry must have `deployment_role: primary-capable`.");
+	expect(hrStaffing).toContain("prefer a pure-soul agent with attached skills over a mixed soul+skill agent");
+});

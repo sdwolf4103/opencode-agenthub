@@ -43,6 +43,7 @@ recommendation: <1-3 sentences>
 ## Review Questions
 
 - Is the team overstaffed or missing a role?
+- Does the team have at least one primary-capable agent?
 - Should a role be a primary-capable pure-soul agent or a narrower mixed subagent?
 - Are model choices proportionate to the task?
 - Which default model should each staged agent use, and where should the user explicitly choose or override that default?

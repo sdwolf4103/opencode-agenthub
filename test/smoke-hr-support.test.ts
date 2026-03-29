@@ -285,3 +285,53 @@ test("validate_staged_package requires defaultAgent for team-only profiles", asy
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
+
+test("validate_staged_package fails when team-only profile has only subagents", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-validate-stage-all-subagents-"));
+	try {
+		const stageRoot = path.join(tempRoot, "stage", "agenthub-home");
+		await Promise.all([
+			mkdir(path.join(stageRoot, "bundles"), { recursive: true }),
+			mkdir(path.join(stageRoot, "profiles"), { recursive: true }),
+			mkdir(path.join(stageRoot, "souls"), { recursive: true }),
+		]);
+		await writeFile(path.join(stageRoot, "souls", "reviewer.md"), "# reviewer\n", "utf8");
+		await writeFile(
+			path.join(stageRoot, "bundles", "reviewer.json"),
+			`${JSON.stringify({
+				name: "reviewer",
+				runtime: "native",
+				soul: "reviewer",
+				skills: [],
+				agent: {
+					name: "reviewer",
+					mode: "subagent",
+					model: "test-model",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(stageRoot, "profiles", "review-team.json"),
+			`${JSON.stringify({
+				name: "review-team",
+				bundles: ["reviewer"],
+				defaultAgent: "reviewer",
+				plugins: ["opencode-agenthub"],
+				nativeAgentPolicy: "team-only",
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const scriptPath = path.join(process.cwd(), "src", "skills", "hr-support", "bin", "validate_staged_package.py");
+		const result = await runPython({
+			args: [scriptPath, path.join(tempRoot, "stage")],
+			cwd: process.cwd(),
+		});
+
+		expect(result.code).not.toBe(0);
+		expect(result.stderr).toContain("at least one primary");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});

@@ -168,6 +168,7 @@ def validate_profile_default_agents(import_root: Path) -> None:
             )
 
         references: list[tuple[str, str]] = []
+        primary_agent_names: set[str] = set()
         missing_bundles: list[str] = []
         for raw_bundle_name in bundle_names:
             if not isinstance(raw_bundle_name, str) or not raw_bundle_name.strip():
@@ -181,11 +182,16 @@ def validate_profile_default_agents(import_root: Path) -> None:
                 continue
             agent = bundle.get("agent", {})
             agent_name = agent.get("name") if isinstance(agent, dict) else None
+            agent_mode = agent.get("mode") if isinstance(agent, dict) else None
+            agent_hidden = agent.get("hidden") if isinstance(agent, dict) else None
             if not isinstance(agent_name, str) or not agent_name.strip():
                 raise SystemExit(
                     f"Bundle '{bundle_name}' is missing required agent.name; profile '{profile_name}' cannot use it."
                 )
-            references.append((bundle_name, agent_name.strip()))
+            normalized_agent_name = agent_name.strip()
+            references.append((bundle_name, normalized_agent_name))
+            if agent_mode == "primary" and agent_hidden is not True:
+                primary_agent_names.add(normalized_agent_name)
 
         if missing_bundles:
             detail = ", ".join(missing_bundles)
@@ -198,6 +204,10 @@ def validate_profile_default_agents(import_root: Path) -> None:
         if native_agent_policy == "team-only" and default_agent is None:
             raise SystemExit(
                 f"Profile '{profile_name}' uses nativeAgentPolicy 'team-only' and must set defaultAgent explicitly."
+            )
+        if native_agent_policy == "team-only" and not primary_agent_names:
+            raise SystemExit(
+                f"Profile '{profile_name}' uses nativeAgentPolicy 'team-only' but does not include at least one primary, non-hidden agent."
             )
         if default_agent is None:
             continue
@@ -224,6 +234,10 @@ def validate_profile_default_agents(import_root: Path) -> None:
 
         agent_names = {agent_name for _, agent_name in references}
         if normalized_default_agent in agent_names:
+            if normalized_default_agent not in primary_agent_names:
+                raise SystemExit(
+                    f"Profile '{profile_name}' defaultAgent '{normalized_default_agent}' must point to a primary, non-hidden agent."
+                )
             continue
 
         available = ", ".join(sorted(agent_names)) or "(none)"

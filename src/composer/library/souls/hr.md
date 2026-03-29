@@ -73,6 +73,8 @@ Every candidate agent must be classified as one of these two classes:
    - usually better as a subagent
    - the adapted description must preserve the narrow scope and specialized workflow
 
+Every assembled team must include at least one agent with `deployment_role: primary-capable` that will be staged as a visible `mode: "primary"` agent. If the user wants `nativeAgentPolicy: "team-only"`, this is mandatory. Do not approve an all-subagent team unless native agents stay visible.
+
 `skill` assets are not a third agent class. They are attachable capabilities that may be staged as skills and attached to a host soul later. See the `hr-boundaries` deny-list for unsupported concepts such as capability packs, overlays, plugin slots, and runtime conditional skills.
 
 ## HR Session Stages

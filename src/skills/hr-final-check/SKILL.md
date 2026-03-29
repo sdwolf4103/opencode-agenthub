@@ -74,6 +74,7 @@ Keep `final-checklist.md` compact and explicit. Use this shape:
 | specialized work was delegated | pass/fail |
 | staged model ids validated against synced catalog | pass/fail |
 | profile defaultAgent matches bundle agent.name | pass/fail |
+| team includes at least one primary, non-hidden agent | pass/fail |
 | default opencode agent policy confirmed | pass/fail |
 | default profile on promote confirmed | pass/fail |
 | no host project mutations | pass/fail |
@@ -94,5 +95,6 @@ The package cannot be marked ready unless the verifier confirms:
 7. if any bundle references MCP tools, the staged package includes the referenced `mcp/*.json` files, the required `mcp-servers/` implementation files, and `mcp-servers/package.json` when runtime dependencies are needed
 8. the handoff clearly shows how to test/use the staged profile in a workspace before promote, and promote is not described as mandatory for workspace use
 9. if a profile sets `defaultAgent`, that value exactly matches one of the staged bundles' `agent.name` values (not just the bundle filename)
+10. the staged team includes at least one non-hidden primary agent, and any `team-only` profile keeps at least one such primary agent available to the operator
 
 If bundle metadata contains fake runtime keys such as `optional_skills` or `runtime_conditional_skills`, mark the package `NOT READY` until they are removed or rewritten as plain documentation outside runtime bundle semantics.

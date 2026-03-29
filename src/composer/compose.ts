@@ -194,6 +194,12 @@ const validateProfileDefaultAgent = ({
 
 	const matchedAgent = agentConfig[configuredDefaultAgent];
 	if (matchedAgent && !isDisabledAgentEntry(matchedAgent)) {
+		const matchedBundle = bundles.find((bundle) => bundle.agent.name === configuredDefaultAgent);
+		if (matchedBundle?.agent.mode !== "primary") {
+			throw new Error(
+				`Profile '${profile.name}' defaultAgent '${configuredDefaultAgent}' must point to a primary agent, but the matched bundle uses mode '${matchedBundle?.agent.mode || "unknown"}'.`,
+			);
+		}
 		return configuredDefaultAgent;
 	}
 
@@ -210,6 +216,26 @@ const validateProfileDefaultAgent = ({
 	throw new Error(
 		`Profile '${profile.name}' sets defaultAgent '${configuredDefaultAgent}', but no enabled generated agent matches that name.${bundleHint}${disabledHint} Available agent names: ${availableAgents.join(", ") || "(none)"}.`,
 	);
+};
+
+const validateTeamHasPrimaryAgent = ({
+	profile,
+	bundles,
+	nativeAgentPolicy,
+}: {
+	profile: ProfileSpec;
+	bundles: BundleSpec[];
+	nativeAgentPolicy: NativeAgentPolicy;
+}) => {
+	const hasVisiblePrimary = bundles.some(
+		(bundle) => bundle.agent.mode === "primary" && bundle.agent.hidden !== true,
+	);
+	if (hasVisiblePrimary) return;
+	if (nativeAgentPolicy === "team-only") {
+		throw new Error(
+			`Profile '${profile.name}' must include at least one primary, visible staged agent when nativeAgentPolicy is 'team-only'.`,
+		);
+	}
 };
 
 const workflowInjectionMatchesBundles = (
@@ -968,6 +994,11 @@ export const composeWorkspace = async (
 		profile,
 		bundles,
 		agentConfig,
+		nativeAgentPolicy,
+	});
+	validateTeamHasPrimaryAgent({
+		profile,
+		bundles,
 		nativeAgentPolicy,
 	});
 

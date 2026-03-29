@@ -73,7 +73,9 @@ For each recommended entry, specify:
 
 ## Decision Rules
 
+- At least one staffing-plan entry must have `deployment_role: primary-capable`.
 - Prefer the smallest team that can cover planning, sourcing/exploration, implementation, audit, verification, and documentation.
+- When multiple candidates can cover the same seat, prefer a pure-soul agent with attached skills over a mixed soul+skill agent. Use a mixed soul+skill agent only when the specialized workflow cannot be cleanly separated, the source is tightly fused, or the user explicitly wants that mixed form.
 - Prefer local worker cards from `$HR_HOME/inventory/workers/` with `inventory_status = available`.
 - Treat `draft` worker cards as sourcing inputs that still need review or explicit operator acceptance.
 - Exclude `retired` worker cards from recommended staffing compositions.
