@@ -7,9 +7,10 @@ import { composeWorkspace } from "../src/composer/compose.js";
 import { exportAgentHubHome, importAgentHubHome } from "../src/composer/home-transfer.js";
 import { readWorkflowInjectionConfig } from "../src/composer/settings.js";
 
+const splitLines = (contents: string) => contents.split(/\r?\n/);
+
 const parseGeneratedJson = (contents: string) => {
-	const normalized = contents
-		.split("\n")
+	const normalized = splitLines(contents)
 		.filter((line) => !line.startsWith("//"))
 		.join("\n")
 		.trim();
@@ -122,10 +123,10 @@ test("exported Agent Hub home can round-trip into equivalent runtime config", as
 		expect(importedConfig.agent).toEqual(sourceConfig.agent);
 		expect(importedConfig.mcp.demo.type).toBe(sourceConfig.mcp.demo.type);
 		expect(importedConfig.mcp.demo.timeout).toBe(sourceConfig.mcp.demo.timeout);
-		expect(importedConfig.mcp.demo.command).toEqual([
-			"node",
+		expect(importedConfig.mcp.demo.command[0]).toBe("node");
+		expect(path.normalize(importedConfig.mcp.demo.command[1])).toBe(
 			path.join(importedHome, "mcp-servers", "demo.js"),
-		]);
+		);
 		expect(sourceRuntimeConfig.planDetection).toEqual({
 			enabled: true,
 			queueVisibleReminder: true,

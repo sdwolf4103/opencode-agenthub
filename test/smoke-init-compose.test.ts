@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import os from "node:os";
@@ -18,9 +19,10 @@ import {
 } from "../src/composer/platform.js";
 import { createProfile } from "../src/skills/agenthub-doctor/fix.js";
 
+const splitLines = (contents: string) => contents.split(/\r?\n/);
+
 const parseGeneratedJson = (contents: string) => {
-	const normalized = contents
-		.split("\n")
+	const normalized = splitLines(contents)
 		.filter((line) => !line.startsWith("//"))
 		.join("\n")
 		.trim();
@@ -39,6 +41,22 @@ const pathExists = async (target: string) => {
 const cliEntry = path.join(process.cwd(), "src", "composer", "opencode-profile.ts");
 const windows = isWindows();
 const pythonCommand = resolvePythonCommand(windows);
+
+const hasCommandOnPath = (command: string) => {
+	const extensions = windows ? ["", ".exe", ".cmd", ".bat"] : [""];
+	for (const rawDir of (process.env.PATH || "").split(path.delimiter)) {
+		const dir = rawDir.replace(/^"|"$/g, "");
+		if (!dir) continue;
+		for (const extension of extensions) {
+			if (existsSync(path.join(dir, `${command}${extension}`))) {
+				return true;
+			}
+		}
+	}
+	return false;
+};
+
+const opencodeIntegrationTest = hasCommandOnPath("opencode") ? test : test.skip;
 
 const writeExecutable = async ({
 	targetBase,
@@ -1502,7 +1520,7 @@ test("composeWorkspace nativeAgentPolicy team-only disables default opencode age
 	}
 });
 
-test("team-only runtime hides default opencode agents from opencode agent list", async () => {
+opencodeIntegrationTest("team-only runtime hides default opencode agents from opencode agent list", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-team-only-runtime-"));
 	const originalHome = process.env.HOME;
 	const originalXdgHome = process.env.XDG_CONFIG_HOME;
@@ -1974,9 +1992,10 @@ test("composeWorkspace honors explicit homeRoot over environment home", async ()
 		expect(
 			await readFile(path.join(result.configRoot, "agents", "auto.md"), "utf8"),
 		).toContain("TARGET HOME");
-		expect(
+		const lock = parseGeneratedJson(
 			await readFile(path.join(result.configRoot, "agenthub-lock.json"), "utf8"),
-		).toContain(targetHome);
+		);
+		expect(lock.libraryRoot).toBe(targetHome);
 	} finally {
 		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
 		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
@@ -2408,9 +2427,10 @@ test("hr custom-profile resolves from HR Office root", async () => {
 		expect(result.stdout).toContain("Environment: HR Office");
 		const configRoot = result.stdout.trim().split("\n").pop();
 		if (!configRoot) throw new Error("Expected config root output from hr recruiter-team --assemble-only");
-		expect(
+		const lock = parseGeneratedJson(
 			await readFile(path.join(configRoot, "agenthub-lock.json"), "utf8"),
-		).toContain(hrHome);
+		);
+		expect(lock.libraryRoot).toBe(hrHome);
 		const opencodeConfig = parseGeneratedJson(
 			await readFile(path.join(configRoot, "opencode.jsonc"), "utf8"),
 		);
@@ -2575,7 +2595,7 @@ test("sync_sources refreshes a local model catalog into HR inventory", async () 
 			path.join(hrHome, "inventory", "models", "valid-model-ids.txt"),
 			"utf8",
 		);
-		expect(validModelIds.trim().split("\n")).toEqual([
+		expect(splitLines(validModelIds.trim())).toEqual([
 			"openai/gpt-5",
 			"openai/gpt-5-mini",
 			"openrouter/openai/gpt-5",
