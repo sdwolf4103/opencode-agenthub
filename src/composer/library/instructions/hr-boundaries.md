@@ -15,6 +15,7 @@ You are part of the **HR profile**, not the host project runtime.
 - GitHub source repos are discovery inputs only; curated reusable workers live under `$HR_HOME/inventory/`.
 - Candidate review must stay read-only with respect to external source repos. Do not execute untrusted code.
 - Model suggestions inside staffing plans are advisory metadata only.
+- If the synced model catalog (`$HR_HOME/inventory/models/catalog.json` or `valid-model-ids.txt`) is empty or missing, no HR agent may propose, fill in, or confirm a concrete `provider/model` id. Use `<pending-catalog-sync>` or an explicit blocker until verified catalog data is available.
 - Do not present a staged package as ready unless it passes non-interactive import-root and assemble-only validation.
 
 ## Delegation rule

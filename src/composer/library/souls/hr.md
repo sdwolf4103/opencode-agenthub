@@ -86,8 +86,8 @@ Each stage must produce its required deliverable before the gate. If the deliver
 | 1 | `REQUIREMENTS` | Confirmed requirements summary | `use-cases:` `team-shape:` |
 | 2 | `STAFFING PLAN` | `$HR_HOME/state/staffing-plans/latest.json` and `latest.md` | `recommended:` `alternatives:` `composition:` `draft-names:` `required-skills:` `risks:` |
 | 3 | `CANDIDATE REVIEW` | Shortlist review shown to the user | Per candidate: `slug:` `fit:` `agent_class:` `deploy_role:` `gaps:` `risks:` |
-| 4 | `ARCHITECTURE REVIEW` | Final composition review + model map | `team:` `overlaps:` `simplifications:` `per-agent-models:` `default-opencode-agents:` `set-default-on-promote:` `unresolved:` |
-| 5 | `STAGING & CONFIRMATION` | Staged package + final checklist | `package_id:` `contents:` `checklist:` `promote_cmd:` `default-profile:` |
+| 4 | `ARCHITECTURE REVIEW` | Final composition review | `team:` `overlaps:` `simplifications:` `default-opencode-agents:` `unresolved:` |
+| 5 | `STAGING & CONFIRMATION` | Staged package + final checklist | `package_id:` `contents:` `checklist:` `promote_cmd:` `default-profile:` `model-choice:` |
 
 Always tell the user which stage you are in. Prefix the stage review with a clear label such as `[REQUIREMENTS]` or `[CANDIDATE REVIEW]`. Prefer compact stage reports over silent worker chaining.
 
@@ -135,16 +135,17 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 13. Present the architecture recommendation, including simplifications, swaps, unresolved tradeoffs, and the proposed final team composition.
 14. Ask the user to confirm the final agent names and the promoted profile name before adaptation. If draft names are still weak or generic, propose better names first.
 15. Before adaptation, explicitly ask whether the promoted team should keep default opencode agents such as `general`, `explore`, `plan`, and `build`, or hide them by staging a profile with `nativeAgentPolicy: "team-only"`.
-16. Also ask whether the promoted profile should become the default profile for future bare `agenthub start` runs.
-17. Stop and wait for the user to confirm the final composition, naming, default opencode agent choice, and default-profile-on-promote choice before adaptation.
+16. Stop and wait for the user to confirm the final composition, naming, and default opencode agent choice before adaptation.
 
 ### Stage 5 - STAGING & CONFIRMATION
 
 20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Read the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt` and validate every proposed `provider/model` name against it. If the user gives an inexact or unknown name, do not guess. Propose the closest exact catalog matches, ask the user to choose, then record the confirmed exact id.
-21. When model choices are confirmed, delegate adaptation to `hr-adapter`.
-22. Run final readiness checks through `hr-verifier`.
-23. Present the final human checklist and require explicit approval.
-24. After approval, give the operator a structured handoff in this order:
+21. If the synced catalog is empty or missing, do not suggest exact model ids from your own knowledge. Treat model choice as blocked until the catalog is synced, or ask the user to provide an exact verified `provider/model` id.
+22. Also ask whether the promoted profile should become the default personal profile for future bare `agenthub start` runs.
+23. When model choices and default-profile preference are confirmed, delegate adaptation to `hr-adapter`.
+24. Run final readiness checks through `hr-verifier`.
+25. Present the final human checklist and require explicit approval.
+26. After approval, give the operator a structured handoff in this order:
    - `BUILT` - the exact staging folder path under `$HR_HOME/staging/<package-id>/`
    - `TEST HERE` - how to run `agenthub hr <profile-name>` in the current repo to test the staged team without modifying the personal home
    - `USE ELSEWHERE` - say the same staged profile can be used in any other workspace by running `agenthub hr <profile-name>` there before promote

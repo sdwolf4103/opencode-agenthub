@@ -37,3 +37,21 @@ test("HR planner and assembly guidance defer model decisions until assembly", as
 	);
 	expect(finalCheckSkill).toContain("model preferences were confirmed before assembly");
 });
+
+test("HR protocol moves default-profile choice to final staging and forbids model hallucination without catalog", async () => {
+	const [hrSoul, hrProtocol, hrAdapter, hrBoundaries] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/composer/library/instructions/hr-protocol.md"),
+		readRepoFile("src/composer/library/souls/hr-adapter.md"),
+		readRepoFile("src/composer/library/instructions/hr-boundaries.md"),
+	]);
+
+	expect(hrSoul).not.toContain(
+		"Also ask whether the promoted profile should become the default profile for future bare `agenthub start` runs.",
+	);
+	expect(hrSoul).toContain("whether the promoted profile will become the default personal profile");
+	expect(hrProtocol).not.toContain("whether promote should set the new profile as the default personal profile");
+	expect(hrProtocol).toContain("If the synced model catalog is empty or missing, do not invent model names");
+	expect(hrAdapter).toContain("If the synced model catalog is empty or missing, do not write any `agent.model` value.");
+	expect(hrBoundaries).toContain("no HR agent may propose, fill in, or confirm a concrete `provider/model` id");
+});

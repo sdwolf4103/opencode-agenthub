@@ -51,6 +51,7 @@ Keep handoff output compact.
 - If a staged profile sets `defaultAgent`, use the staged bundle `agent.name`, not the bundle filename. Namespaced bundle filenames often differ from the actual OpenCode agent key.
 - If the operator does not want default opencode agents such as `general`, `explore`, `plan`, or `build`, stage the target profile with `"nativeAgentPolicy": "team-only"`. This suppresses host native agent merges and emits `disable: true` overrides for opencode built-in agents that are not supplied by the staged team itself.
 - Before writing any staged `agent.model`, confirm the exact `provider/model` id against the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt`. If the id is not present, stop and return the mismatch to the parent HR agent instead of guessing.
+- If the synced model catalog is empty or missing, do not write any `agent.model` value. Stop and report that model assembly is blocked until catalog data is available.
 - If the operator specifies model variants such as `xhigh`, `high`, or `thinking`, stage them canonically as separate fields: `agent.model: "provider/model"` and `agent.variant: "..."`.
 - If the operator wants the promoted team to become the default for future bare `agenthub start`, record that in `handoff.json` as `promotion_preferences.set_default_profile: true`.
 - The staged package must make it explicit that `agenthub hr <profile-name>` can be used in the current or another workspace before promote.

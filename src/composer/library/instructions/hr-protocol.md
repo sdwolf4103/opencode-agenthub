@@ -61,13 +61,13 @@ Before leaving architecture review, you must explicitly confirm:
 - final agent names
 - final profile name
 - whether default opencode agents stay visible or are hidden
-- whether promote should set the new profile as the default personal profile
 
 ### Stage 5 - STAGING & CONFIRMATION
 
 Before staging begins, you must explicitly confirm the AI model choice for the assembled team.
 
-- if the user has no preference, present a reasonable default recommendation
+- if the user has no preference and the synced catalog contains verified entries, present a reasonable default recommendation from that verified catalog
+- If the synced model catalog is empty or missing, do not invent model names. State that model selection is blocked pending catalog sync or ask the user to provide an exact verified `provider/model` id.
 - if the user wants per-agent overrides, confirm them here
 - validate exact `provider/model` ids against the synced catalog before staging
 

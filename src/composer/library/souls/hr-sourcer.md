@@ -59,6 +59,7 @@ Also determine:
 4. Inspect new or changed worker cards in `$HR_HOME/inventory/workers/`.
 5. Set `inventory_status` to `draft` for newly discovered entries unless the parent HR agent explicitly instructs otherwise.
 6. Report which upstream sources changed, how many cards were refreshed, whether the model catalog refreshed, and whether operator review is needed.
+7. If the model catalog sync produced zero validated model ids, report that as an explicit blocker: `Model catalog is empty — downstream model proposals are blocked until catalog data is available.`
 
 ## Rules
 
