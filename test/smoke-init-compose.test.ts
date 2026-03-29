@@ -17,7 +17,7 @@ import {
 	shouldChmod,
 	spawnOptions,
 } from "../src/composer/platform.js";
-import { createProfile } from "../src/skills/agenthub-doctor/fix.js";
+import { createBundleForSoul, createProfile } from "../src/skills/agenthub-doctor/fix.js";
 
 const splitLines = (contents: string) => contents.split(/\r?\n/);
 
@@ -224,6 +224,39 @@ test("setup mode settings compose into runtime config", async () => {
 		if (originalNativeConfig === undefined) delete process.env.OPENCODE_AGENTHUB_NATIVE_CONFIG;
 		else process.env.OPENCODE_AGENTHUB_NATIVE_CONFIG = originalNativeConfig;
 
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("auto bundle keeps model blank when no user default exists", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-auto-blank-model-"));
+	try {
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		await installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" });
+
+		const autoBundle = JSON.parse(
+			await readFile(path.join(agentHubHome, "bundles", "auto.json"), "utf8"),
+		);
+		expect(autoBundle.agent.model).toBe("");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("doctor bundle creation leaves model blank without explicit selection", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-blank-model-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		await mkdir(path.join(targetRoot, "bundles"), { recursive: true });
+
+		const result = await createBundleForSoul(targetRoot, "auto", {});
+		expect(result.success).toBe(true);
+
+		const createdBundle = JSON.parse(
+			await readFile(path.join(targetRoot, "bundles", "auto.json"), "utf8"),
+		);
+		expect(createdBundle.agent.model).toBe("");
+	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
@@ -2281,6 +2314,42 @@ test("bare hr command keeps recommended HR model even when native config exists"
 		expect(settings.agents["hr-adapter"].variant).toBe("high");
 		expect(settings.agents["hr-verifier"].model).toBe("openai/gpt-5.4-mini");
 		expect(settings.agents["hr-verifier"].variant).toBe("high");
+		expect(settings.meta.onboarding.modelStrategy).toBe("recommended");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("interactive HR bootstrap strips Windows mouse-tracking escape noise", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-windows-mouse-noise-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const result = await runCli({
+			args: ["hr", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+			input: "\u001b[<35;24;14mrecommended\n",
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).not.toContain("35;24;14m");
+		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
+		expect(settings.agents.hr.model).toBe("openai/gpt-5.4-mini");
 		expect(settings.meta.onboarding.modelStrategy).toBe("recommended");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });

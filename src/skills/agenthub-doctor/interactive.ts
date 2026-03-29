@@ -200,9 +200,9 @@ async function createBundleFlow(
 	const mode = modeInput.trim() === "subagent" ? "subagent" : "primary";
 
 	const modelInput = await rl.question(
-		"Model [default: github-copilot/claude-sonnet-4.5]: ",
+		"Model [default: none]: ",
 	);
-	const model = modelInput.trim() || "github-copilot/claude-sonnet-4.5";
+	const model = modelInput.trim();
 
 	// Create bundle
 	const result = await createBundleForSoul(targetRoot, soulName.trim(), {

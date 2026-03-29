@@ -4,8 +4,10 @@ import {
 	displayHomeConfigPath,
 	generateRunCmd,
 	generateRunScript,
+	interactivePromptResetSequence,
 	isWindows,
 	resolvePythonCommand,
+	stripTerminalControlInput,
 	shouldChmod,
 	shouldOfferEnvrc,
 	resolveHomeConfigRoot,
@@ -93,5 +95,22 @@ describe("platform helpers", () => {
 		const notice = windowsStartupNotice(true);
 		expect(notice).toContain("native Windows detected");
 		expect(notice).toContain("use WSL 2");
+	});
+
+	test("interactivePromptResetSequence disables mouse tracking on Windows", () => {
+		expect(interactivePromptResetSequence(false)).toBe("");
+		const sequence = interactivePromptResetSequence(true);
+		expect(sequence).toContain("\u001b[?1000l");
+		expect(sequence).toContain("\u001b[?1006l");
+		expect(sequence).toContain("\u001b[?1015l");
+	});
+
+	test("stripTerminalControlInput removes mouse tracking noise", () => {
+		const noisy = "\u001b[<35;24;14mrecom\u001b[<35;25;15mmen\u001b[<35;26;16mded";
+		expect(stripTerminalControlInput(noisy)).toBe("recommended");
+	});
+
+	test("stripTerminalControlInput preserves plain input", () => {
+		expect(stripTerminalControlInput("custom")).toBe("custom");
 	});
 });

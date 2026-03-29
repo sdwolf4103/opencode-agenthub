@@ -52,10 +52,12 @@ import {
 } from "./settings.js";
 import {
 	displayHomeConfigPath,
+	interactivePromptResetSequence,
 	resolvePythonCommand,
 	shouldChmod,
 	shouldOfferEnvrc,
 	spawnOptions,
+	stripTerminalControlInput,
 	windowsStartupNotice,
 } from "./platform.js";
 
@@ -1496,8 +1498,21 @@ const maybeConfigureEnvrc = async (workspace: string, configRoot: string) => {
 	}
 };
 
-const createPromptInterface = () =>
-	readline.createInterface({ input: process.stdin, output: process.stdout });
+const createPromptInterface = () => {
+	const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+	if (interactive) {
+		const resetSequence = interactivePromptResetSequence();
+		if (resetSequence) process.stdout.write(resetSequence);
+	}
+	return readline.createInterface({
+		input: process.stdin,
+		output: process.stdout,
+		terminal: interactive,
+	});
+};
+
+const askPrompt = async (rl: readline.Interface, question: string): Promise<string> =>
+	stripTerminalControlInput(await rl.question(question));
 
 const promptRequired = async (
 	rl: readline.Interface,
@@ -1505,7 +1520,8 @@ const promptRequired = async (
 	defaultValue?: string,
 ): Promise<string> => {
 	while (true) {
-		const answer = await rl.question(
+		const answer = await askPrompt(
+			rl,
 			defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `,
 		);
 		const value = normalizeOptional(answer) || defaultValue;
@@ -1519,7 +1535,8 @@ const promptOptional = async (
 	question: string,
 	defaultValue?: string,
 ): Promise<string | undefined> => {
-	const answer = await rl.question(
+	const answer = await askPrompt(
+		rl,
 		defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `,
 	);
 	return normalizeOptional(answer) || defaultValue;
@@ -1531,7 +1548,8 @@ const promptCsv = async (
 	defaultValues: string[] = [],
 ): Promise<string[]> => {
 	const defaultValue = defaultValues.join(", ");
-	const answer = await rl.question(
+	const answer = await askPrompt(
+		rl,
 		defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `,
 	);
 	return normalizeCsv(answer || defaultValue);
@@ -1544,7 +1562,7 @@ const promptBoolean = async (
 ): Promise<boolean> => {
 	const suffix = defaultValue ? "[Y/n]" : "[y/N]";
 	while (true) {
-		const answer = (await rl.question(`${question} ${suffix}: `))
+		const answer = (await askPrompt(rl, `${question} ${suffix}: `))
 			.trim()
 			.toLowerCase();
 		if (!answer) return defaultValue;
@@ -1562,7 +1580,7 @@ const promptChoice = async <T extends string>(
 ): Promise<T> => {
 	const label = `${question} [${choices.join("/")}] (${defaultValue})`;
 	while (true) {
-		const answer = (await rl.question(`${label}: `)).trim().toLowerCase();
+		const answer = (await askPrompt(rl, `${label}: `)).trim().toLowerCase();
 		if (!answer) return defaultValue;
 		const match = choices.find((choice) => choice === answer);
 		if (match) return match;
@@ -1581,7 +1599,10 @@ const promptIndexedChoice = async (
 	});
 	const defaultIndex = Math.max(choices.indexOf(defaultValue), 0) + 1;
 	while (true) {
-		const answer = (await rl.question(`${question} [1-${choices.length}] (${defaultIndex}): `))
+		const answer = (await askPrompt(
+			rl,
+			`${question} [1-${choices.length}] (${defaultIndex}): `,
+		))
 			.trim()
 			.toLowerCase();
 		if (!answer) return defaultValue;
@@ -1952,7 +1973,8 @@ const promptRecord = async (
 	rl: readline.Interface,
 	question: string,
 ): Promise<Record<string, string> | undefined> => {
-	const answer = await rl.question(
+	const answer = await askPrompt(
+		rl,
 		`${question} (comma-separated key=value, blank to skip): `,
 	);
 	const entries = normalizeCsv(answer);

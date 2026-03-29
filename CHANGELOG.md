@@ -2,6 +2,17 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.1.1] — 2026-03-29
+
+### Bug fixes
+
+- stop forcing `agenthub start` / `auto` bundles onto `github-copilot/claude-sonnet-4.5` when the user has no preset, and persist an empty model string instead
+- harden native Windows `agenthub hr` bootstrap prompts against mouse-tracking escape-sequence input pollution
+
+### Validation
+
+- add regression coverage for blank auto-model defaults and noisy Windows HR bootstrap input
+
 ## [0.1.0] — 2026-03-29
 
 ### HR Office isolation

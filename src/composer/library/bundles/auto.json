@@ -9,7 +9,7 @@
     "name": "auto",
     "mode": "primary",
     "hidden": false,
-    "model": "github-copilot/claude-sonnet-4.5",
+    "model": "",
     "description": "Default coding agent with OMO-style intent detection and native build/edit/test workflow",
     "permission": {
       "*": "allow"

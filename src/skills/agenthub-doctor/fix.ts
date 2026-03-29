@@ -200,7 +200,7 @@ export async function createBundleForSoul(
 			agent: {
 				name: options.agentName ?? soulName,
 				mode: options.mode ?? "primary",
-				model: options.model || "github-copilot/claude-sonnet-4.5",
+				model: options.model ?? "",
 				description: "Auto-generated bundle for imported soul",
 			},
 		};

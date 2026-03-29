@@ -24,6 +24,31 @@ export const resolvePythonCommand = (win?: boolean) =>
 export const spawnOptions = (win?: boolean): { shell?: boolean } =>
 	isWindows(win) ? { shell: true } : {};
 
+const csiSequencePattern = /\u001b\[[0-?]*[ -/]*[@-~]/g;
+const oscSequencePattern = /\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
+const singleEscapePattern = /\u001b[@-_]/g;
+const controlCharacterPattern = /[\u0000-\u001f\u007f]/g;
+
+export const stripTerminalControlInput = (value: string): string =>
+	value
+		.replace(oscSequencePattern, "")
+		.replace(csiSequencePattern, "")
+		.replace(singleEscapePattern, "")
+		.replace(controlCharacterPattern, "");
+
+export const interactivePromptResetSequence = (win = detectWindows()) =>
+	isWindows(win)
+		? [
+			"\u001b[?1000l",
+			"\u001b[?1001l",
+			"\u001b[?1002l",
+			"\u001b[?1003l",
+			"\u001b[?1005l",
+			"\u001b[?1006l",
+			"\u001b[?1015l",
+		].join("")
+		: "";
+
 export const generateRunScript = () => `#!/usr/bin/env bash
 set -euo pipefail
 
