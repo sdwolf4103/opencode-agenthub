@@ -110,6 +110,12 @@ describe("platform helpers", () => {
 		expect(stripTerminalControlInput(noisy)).toBe("recommended");
 	});
 
+	test("stripTerminalControlInput removes degraded Windows CSI fragments", () => {
+		const noisy =
+			"35;42m35;43m35;44m35;49m35;50m35;56;22m35;57;22m35;58;22mstaff";
+		expect(stripTerminalControlInput(noisy)).toBe("staff");
+	});
+
 	test("stripTerminalControlInput preserves plain input", () => {
 		expect(stripTerminalControlInput("custom")).toBe("custom");
 	});

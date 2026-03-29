@@ -28,13 +28,15 @@ const csiSequencePattern = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 const oscSequencePattern = /\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
 const singleEscapePattern = /\u001b[@-_]/g;
 const controlCharacterPattern = /[\u0000-\u001f\u007f]/g;
+const degradedLeadingCsiFragmentPattern = /^(?:(?:\d{1,3};){1,10}\d{1,3}m)+/;
 
 export const stripTerminalControlInput = (value: string): string =>
 	value
 		.replace(oscSequencePattern, "")
 		.replace(csiSequencePattern, "")
 		.replace(singleEscapePattern, "")
-		.replace(controlCharacterPattern, "");
+		.replace(controlCharacterPattern, "")
+		.replace(degradedLeadingCsiFragmentPattern, "");
 
 export const interactivePromptResetSequence = (win = detectWindows()) =>
 	isWindows(win)
