@@ -1582,7 +1582,8 @@ test("composeWorkspace nativeAgentPolicy team-only disables default opencode age
 		expect(opencodeConfig.default_agent).toBe("coding-lead");
 		expect(opencodeConfig.agent["coding-lead"].model).toBe("team-model");
 		expect(opencodeConfig.agent.general).toEqual({ disable: true });
-		expect(opencodeConfig.agent.explore).toEqual({ disable: true });
+		expect(opencodeConfig.agent.explore.mode).toBe("subagent");
+		expect(opencodeConfig.agent.explore.hidden).toBe(true);
 		expect(opencodeConfig.agent.plan).toEqual({ disable: true });
 		expect(opencodeConfig.agent.build).toEqual({ disable: true });
 		expect(lock.nativeAgentPolicy).toBe("team-only");
@@ -1685,7 +1686,7 @@ opencodeIntegrationTest("team-only runtime hides default opencode agents from op
 		expect(opencodeResult.code).toBe(0);
 		expect(opencodeResult.stdout).toContain("coding-lead");
 		expect(opencodeResult.stdout).not.toContain("general (");
-		expect(opencodeResult.stdout).not.toContain("explore (");
+		expect(opencodeResult.stdout).toContain("explore (subagent)");
 		expect(opencodeResult.stdout).not.toContain("plan (");
 		expect(opencodeResult.stdout).not.toContain("build (");
 	} finally {
@@ -1765,8 +1766,175 @@ test("composeWorkspace team-only keeps a bundle-provided built-in agent active",
 		expect(opencodeConfig.agent.plan.disable).toBeUndefined();
 		expect(opencodeConfig.agent.plan.model).toBeDefined();
 		expect(opencodeConfig.agent.general).toEqual({ disable: true });
-		expect(opencodeConfig.agent.explore).toEqual({ disable: true });
+		expect(opencodeConfig.agent.explore.mode).toBe("subagent");
+		expect(opencodeConfig.agent.explore.hidden).toBe(true);
 		expect(opencodeConfig.agent.build).toEqual({ disable: true });
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
+
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("composeWorkspace team-only auto-injects hidden explore when team provides no explore coverage", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-team-only-auto-explore-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		const workspace = path.join(tempRoot, "workspace");
+
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" }),
+		]);
+
+		await writeFile(path.join(agentHubHome, "souls", "coding-lead.md"), "# coding lead\n", "utf8");
+		await writeFile(
+			path.join(agentHubHome, "bundles", "coding-lead.json"),
+			`${JSON.stringify({
+				name: "coding-lead",
+				runtime: "native",
+				soul: "coding-lead",
+				skills: [],
+				agent: {
+					name: "coding-lead",
+					mode: "primary",
+					hidden: false,
+					model: "team-model",
+					description: "Coding lead",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "profiles", "coding-team.json"),
+			`${JSON.stringify({
+				name: "coding-team",
+				bundles: ["coding-lead"],
+				defaultAgent: "coding-lead",
+				plugins: ["opencode-agenthub"],
+				nativeAgentPolicy: "team-only",
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = agentHubHome;
+
+		const result = await composeWorkspace(workspace, "coding-team");
+		const opencodeConfig = parseGeneratedJson(
+			await readFile(path.join(result.configRoot, "opencode.jsonc"), "utf8"),
+		);
+
+		expect(opencodeConfig.agent.explore.disable).toBeUndefined();
+		expect(opencodeConfig.agent.explore.mode).toBe("subagent");
+		expect(opencodeConfig.agent.explore.hidden).toBe(true);
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
+
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("composeWorkspace team-only does not duplicate explore when team already provides it", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-team-only-custom-explore-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		const workspace = path.join(tempRoot, "workspace");
+
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" }),
+		]);
+
+		await writeFile(path.join(agentHubHome, "souls", "coding-lead.md"), "# coding lead\n", "utf8");
+		await writeFile(path.join(agentHubHome, "souls", "explore.md"), "# custom explore\n", "utf8");
+		await writeFile(
+			path.join(agentHubHome, "bundles", "coding-lead.json"),
+			`${JSON.stringify({
+				name: "coding-lead",
+				runtime: "native",
+				soul: "coding-lead",
+				skills: [],
+				agent: {
+					name: "coding-lead",
+					mode: "primary",
+					hidden: false,
+					model: "team-model",
+					description: "Coding lead",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "bundles", "explore.json"),
+			`${JSON.stringify({
+				name: "explore",
+				runtime: "native",
+				soul: "explore",
+				skills: [],
+				agent: {
+					name: "explore",
+					mode: "subagent",
+					hidden: true,
+					model: "custom-explore-model",
+					description: "Custom explore",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(agentHubHome, "profiles", "coding-team.json"),
+			`${JSON.stringify({
+				name: "coding-team",
+				bundles: ["coding-lead", "explore"],
+				defaultAgent: "coding-lead",
+				plugins: ["opencode-agenthub"],
+				nativeAgentPolicy: "team-only",
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = agentHubHome;
+
+		const result = await composeWorkspace(workspace, "coding-team");
+		const opencodeConfig = parseGeneratedJson(
+			await readFile(path.join(result.configRoot, "opencode.jsonc"), "utf8"),
+		);
+
+		expect(opencodeConfig.agent.explore.model).toBe("custom-explore-model");
 	} finally {
 		if (originalHome === undefined) delete process.env.HOME;
 		else process.env.HOME = originalHome;
@@ -3414,7 +3582,8 @@ test("promote can set the promoted profile as default and keep native defaults h
 		expect(opencodeConfig.default_agent).toBe("coding-lead");
 		expect(opencodeConfig.agent["coding-lead"].model).toBe("team-model");
 		expect(opencodeConfig.agent.general).toEqual({ disable: true });
-		expect(opencodeConfig.agent.explore).toEqual({ disable: true });
+		expect(opencodeConfig.agent.explore.mode).toBe("subagent");
+		expect(opencodeConfig.agent.explore.hidden).toBe(true);
 		expect(opencodeConfig.agent.plan).toEqual({ disable: true });
 		expect(opencodeConfig.agent.build).toEqual({ disable: true });
 	} finally {

@@ -72,3 +72,13 @@ test("HR composition rules require a visible primary agent and prefer pure soul 
 	expect(hrStaffing).toContain("At least one staffing-plan entry must have `deployment_role: primary-capable`.");
 	expect(hrStaffing).toContain("prefer a pure-soul agent with attached skills over a mixed soul+skill agent");
 });
+
+test("HR hide/team-only guidance auto-adds hidden explore coverage without another user prompt", async () => {
+	const [hrSoul, hrAssembly] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/skills/hr-assembly/SKILL.md"),
+	]);
+
+	expect(hrSoul).toContain("If the user wants to hide native agents and no explore-like coverage exists, automatically add a hidden explore subagent");
+	expect(hrAssembly).toContain("If `nativeAgentPolicy` is `team-only` and the staged bundle set does not already provide `explore`, automatically include the built-in hidden `explore` subagent");
+});

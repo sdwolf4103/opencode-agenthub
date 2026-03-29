@@ -197,10 +197,12 @@ test("installAgentHubHome backfills planDetection into existing settings", async
 		});
 		expect(upgradedSettings.meta.builtinVersion).toEqual({
 			"bundles/auto.json": expect.any(String),
+			"bundles/explore.json": expect.any(String),
 			"bundles/plan.json": expect.any(String),
 			"bundles/build.json": expect.any(String),
 			"profiles/auto.json": expect.any(String),
 			"souls/auto.md": expect.any(String),
+			"souls/explore.md": expect.any(String),
 			"souls/plan.md": expect.any(String),
 			"souls/build.md": expect.any(String),
 		});

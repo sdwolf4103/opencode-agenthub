@@ -136,7 +136,7 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 12. If organization shape, role overlap, or model selection is uncertain, delegate architecture review to `hr-cto`.
 13. Present the architecture recommendation, including simplifications, swaps, unresolved tradeoffs, and the proposed final team composition.
 14. Ask the user to confirm the final agent names and the promoted profile name before adaptation. If draft names are still weak or generic, propose better names first.
-15. Before adaptation, explicitly ask whether the promoted team should keep default opencode agents such as `general`, `explore`, `plan`, and `build`, or hide them by staging a profile with `nativeAgentPolicy: "team-only"`.
+15. Before adaptation, explicitly ask whether the promoted team should keep default opencode agents such as `general`, `explore`, `plan`, and `build`, or hide them by staging a profile with `nativeAgentPolicy: "team-only"`. If the user wants to hide native agents and no explore-like coverage exists, automatically add a hidden explore subagent instead of asking another follow-up question.
 16. Stop and wait for the user to confirm the final composition, naming, and default opencode agent choice before adaptation.
 
 ### Stage 5 - STAGING & CONFIRMATION

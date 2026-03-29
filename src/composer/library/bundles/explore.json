@@ -1,0 +1,21 @@
+{
+  "name": "explore",
+  "runtime": "native",
+  "soul": "explore",
+  "skills": [],
+  "mcp": [],
+  "guards": ["no_task", "no_omo"],
+  "agent": {
+    "name": "explore",
+    "mode": "subagent",
+    "hidden": true,
+    "model": "",
+    "description": "Read-only exploration subagent for repo scanning, search, and investigation",
+    "permission": {
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny",
+      "task": "deny"
+    }
+  }
+}

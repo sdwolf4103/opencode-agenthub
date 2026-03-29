@@ -28,10 +28,12 @@ const hrSupportBinRoot = path.join(builtInSkillsRoot, "hr-support", "bin");
 
 const codingLibraryFiles = [
 	"bundles/auto.json",
+	"bundles/explore.json",
 	"bundles/plan.json",
 	"bundles/build.json",
 	"profiles/auto.json",
 	"souls/auto.md",
+	"souls/explore.md",
 	"souls/plan.md",
 	"souls/build.md",
 ];

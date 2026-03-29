@@ -827,6 +827,13 @@ export const composeWorkspace = async (
 	const bundles = await Promise.all(
 		profile.bundles.map((bundleName) => loadBundle(libraryRoot, bundleName)),
 	);
+	const nativeAgentPolicy = resolveNativeAgentPolicy(profile);
+	if (
+		nativeAgentPolicy === "team-only" &&
+		!bundles.some((bundle) => bundle.agent.name === "explore")
+	) {
+		bundles.push(await loadBundle(libraryRoot, "explore"));
+	}
 	const outputRoot =
 		configRoot ||
 		path.join(workspace, ".opencode-agenthub", activeRuntimeDirName);
@@ -949,7 +956,6 @@ export const composeWorkspace = async (
 	const nativeConfig = await loadNativeOpenCodeConfig();
 	const nativePluginEntries = await readNativePluginEntries();
 	const nativeAgents = nativeConfig?.agent || {};
-	const nativeAgentPolicy = resolveNativeAgentPolicy(profile);
 	if (nativeAgentPolicy === "inherit") {
 		for (const [agentName, nativeAgent] of Object.entries(nativeAgents)) {
 			if (!nativeAgent || typeof nativeAgent !== "object") continue;
