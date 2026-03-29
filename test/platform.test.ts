@@ -7,6 +7,7 @@ import {
 	interactivePromptResetSequence,
 	isWindows,
 	resolvePythonCommand,
+	shouldUseReadlineTerminal,
 	stripTerminalControlInput,
 	shouldChmod,
 	shouldOfferEnvrc,
@@ -103,6 +104,11 @@ describe("platform helpers", () => {
 		expect(sequence).toContain("\u001b[?1000l");
 		expect(sequence).toContain("\u001b[?1006l");
 		expect(sequence).toContain("\u001b[?1015l");
+	});
+
+	test("shouldUseReadlineTerminal disables terminal mode on native Windows", () => {
+		expect(shouldUseReadlineTerminal(false)).toBe(true);
+		expect(shouldUseReadlineTerminal(true)).toBe(false);
 	});
 
 	test("stripTerminalControlInput removes mouse tracking noise", () => {

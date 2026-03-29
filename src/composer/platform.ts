@@ -51,6 +51,8 @@ export const interactivePromptResetSequence = (win = detectWindows()) =>
 		].join("")
 		: "";
 
+export const shouldUseReadlineTerminal = (win = detectWindows()) => !isWindows(win);
+
 export const generateRunScript = () => `#!/usr/bin/env bash
 set -euo pipefail
 

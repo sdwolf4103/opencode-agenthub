@@ -67,6 +67,7 @@ import {
 	resolvePythonCommand,
 	shouldChmod,
 	shouldOfferEnvrc,
+	shouldUseReadlineTerminal,
 	spawnOptions,
 	stripTerminalControlInput,
 	windowsStartupNotice,
@@ -1847,14 +1848,15 @@ const maybeConfigureEnvrc = async (workspace: string, configRoot: string) => {
 
 const createPromptInterface = () => {
 	const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
-	if (interactive) {
+	const terminal = interactive && shouldUseReadlineTerminal();
+	if (terminal) {
 		const resetSequence = interactivePromptResetSequence();
 		if (resetSequence) process.stdout.write(resetSequence);
 	}
 	return readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,
-		terminal: interactive,
+		terminal,
 	});
 };
 
