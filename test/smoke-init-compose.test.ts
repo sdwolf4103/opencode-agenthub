@@ -2604,8 +2604,8 @@ test("sync_sources refreshes a local model catalog into HR inventory", async () 
 		const sourceStatus = JSON.parse(await readFile(path.join(hrHome, "source-status.json"), "utf8"));
 		expect(sourceStatus.model_catalogs["local-models"].model_count).toBe(3);
 		expect(sourceStatus.model_catalogs["local-models"].provider_count).toBe(2);
-		expect(sourceStatus.model_catalogs["local-models"].catalog_path).toBe(
-			"inventory/models/catalog.json",
+		expect(path.normalize(sourceStatus.model_catalogs["local-models"].catalog_path)).toBe(
+			path.join("inventory", "models", "catalog.json"),
 		);
 	} finally {
 		server.closeAllConnections();
