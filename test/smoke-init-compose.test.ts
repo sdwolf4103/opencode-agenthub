@@ -2225,8 +2225,17 @@ test("bare hr command bootstraps isolated HR Office", async () => {
 		});
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("Environment: HR Office");
+		expect(result.stdout).toContain("HR Office — first-time setup");
+		expect(result.stdout).toContain("full HR assemble can take about 20–30 minutes");
+		expect(result.stdout).toContain("This will:");
+		expect(result.stdout).toContain("Choose an AI model for HR agents");
+		expect(result.stdout).toContain("Create the HR Office workspace");
+		expect(result.stdout).toContain("Skip inventory sync for now because you are assembling only");
 		expect(result.stdout).toContain("initialised HR Office");
+		expect(result.stdout).toContain("HR Office is ready");
+		expect(result.stdout).toContain("Tip: change HR models later with 'agenthub doctor'.");
+		expect(result.stdout).not.toContain("Environment: HR Office");
+		expect(result.stdout).not.toContain("HR model settings:");
 		await expect(
 			readFile(path.join(workspace, ".opencode-agenthub.user.json"), "utf8"),
 		).rejects.toThrow();
@@ -2306,9 +2315,18 @@ node -e "const fs=require('fs'); const path=require('path'); const root=process.
 		});
 
 		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("HR Office — first-time setup");
+		expect(result.stdout).toContain("full HR assemble can take about 20–30 minutes");
+		expect(result.stdout).toContain("This will:");
 		expect(result.stdout).toContain("initialised HR Office");
-		expect(result.stdout).toContain("syncing HR inventory from 4 GitHub repos + 1 model catalog");
-		expect(result.stdout).toContain("fake sync complete");
+		expect(result.stdout).toContain("Sync the HR sourcer inventory");
+		expect(result.stdout).toContain("this may take a moment, please wait");
+		expect(result.stdout).toContain("HR sourcer inventory sync complete");
+		expect(result.stdout).toContain("HR Office is ready");
+		expect(result.stdout).not.toContain("fake sync complete");
+		expect(result.stdout).not.toContain("Inventory Sync Summary");
+		expect(result.stdout).not.toContain("HR source status:");
+		expect(result.stdout).not.toContain("Environment: HR Office");
 		const sourceStatus = JSON.parse(await readFile(path.join(hrHome, "source-status.json"), "utf8"));
 		expect(sourceStatus.sources.fake.repo).toBe("stub/source");
 	} finally {
@@ -2406,11 +2424,15 @@ test("interactive HR bootstrap strips Windows mouse-tracking escape noise", asyn
 		});
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("[ASSESSMENT]");
-		expect(result.stdout).toContain("[RECOMMENDATION]");
+		expect(result.stdout).toContain("HR Office — first-time setup");
+		expect(result.stdout).toContain("full HR assemble can take about 20–30 minutes");
+		expect(result.stdout).toContain("Recommended setup:");
+		expect(result.stdout).not.toContain("[ASSESSMENT]");
+		expect(result.stdout).not.toContain("[RECOMMENDATION]");
 		expect(result.stdout).not.toContain("[PROCESS]");
 		expect(result.stdout).not.toContain("[REQUIREMENTS]");
 		expect(result.stdout).not.toContain("HR situation");
+		expect(result.stdout).not.toContain("Configured HR sources:");
 		expect(result.stdout).not.toContain("35;24;14m");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.agents.hr.model).toBe("openai/gpt-5.4-mini");
@@ -2456,12 +2478,13 @@ test("interactive hr bootstrap recommends a fallback after assessing available r
 		});
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("[ASSESSMENT]");
-		expect(result.stdout).toContain("Model 'openai/gpt-5.4-mini' is not available");
-		expect(result.stdout).toContain("[RECOMMENDATION]");
+		expect(result.stdout).toContain("full HR assemble can take about 20–30 minutes");
+		expect(result.stdout).toContain("Recommended setup:");
 		expect(result.stdout).toContain("I recommend starting with the best available free HR model");
 		expect(result.stdout).not.toContain("Today:");
 		expect(result.stdout).not.toContain("HR situation");
+		expect(result.stdout).not.toContain("Model 'openai/gpt-5.4-mini' is not available");
+		expect(result.stdout).not.toContain("Configured HR sources:");
 		expect(result.stdout).toContain("Apply this recommendation now");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.meta.onboarding.modelStrategy).toBe("free");
@@ -2507,9 +2530,12 @@ test("interactive hr bootstrap re-prompts until custom model id is valid", async
 		});
 
 		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("full HR assemble can take about 20–30 minutes");
+		expect(result.stdout).toContain("Recommended setup:");
 		expect(result.stdout).toContain("Apply this recommendation now");
 		expect(result.stdout).not.toContain("Today:");
 		expect(result.stdout).not.toContain("HR situation");
+		expect(result.stdout).not.toContain("Configured HR sources:");
 		expect(result.stdout).toContain("Model id must use provider/model format.");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.meta.onboarding.modelStrategy).toBe("custom");

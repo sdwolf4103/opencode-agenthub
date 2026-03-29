@@ -938,6 +938,8 @@ const printRuntimeBanner = (label: string, root: string) => {
 	process.stdout.write(`[agenthub] Home: ${root}\n`);
 };
 
+let suppressNextHrRuntimeBanner = false;
+
 const listPromotablePackageIds = async (hrRoot = defaultHrHome()): Promise<string[]> => {
 	try {
 		const entries = await readdir(path.join(hrRoot, "staging"), { withFileTypes: true });
@@ -1189,28 +1191,8 @@ const printHrBootstrapAssessment = (
 	resources: HrBootstrapResourceAssessment,
 	recommendation: HrBootstrapRecommendation,
 ) => {
-	process.stdout.write("\n[ASSESSMENT]\n");
-	process.stdout.write(
-		`- Configured HR sources: ${formatCountLabel(resources.configuredGithubSources, "GitHub repo")} + ${formatCountLabel(resources.configuredModelCatalogSources, "model catalog")}\n`,
-	);
-	process.stdout.write(
-		`- Synced HR model catalog: ${resources.knownModels ? formatCountLabel(resources.knownModels.size, "known model") : "not synced yet"}\n`,
-	);
-	process.stdout.write(
-		`- Native default model: ${resources.nativeModel || "not configured"}\n`,
-	);
-	process.stdout.write(
-		`- Current opencode models visible: ${resources.availableModels ? resources.availableModels.length : "unavailable"}\n`,
-	);
-	process.stdout.write(
-		`- Current free opencode models: ${resources.freeModels.length > 0 ? resources.freeModels.join(", ") : "none detected"}\n`,
-	);
-	if (!resources.recommendedAvailability.available) {
-		process.stdout.write(`- Recommended preset check: ${resources.recommendedAvailability.message}\n`);
-	}
-	process.stdout.write("\n[RECOMMENDATION]\n");
-	process.stdout.write(`${recommendation.summary}\n`);
-	process.stdout.write(`${recommendation.reason}\n\n`);
+	void resources;
+	process.stdout.write(`\nRecommended setup:\n${recommendation.summary}\n\n`);
 };
 
 const buildHrModelSelection = async (
@@ -1360,9 +1342,6 @@ const promptHrBootstrapModelSelection = async (
 			if (!finalModel) continue;
 			const finalSyntax = validateModelIdentifier(finalModel);
 			if (finalSyntax.ok) {
-				process.stdout.write(
-					`\n[agenthub] HR settings will be written to ${path.join(hrRoot, "settings.json")}\n`,
-				);
 				return validated;
 			}
 		}
@@ -1457,13 +1436,8 @@ const repairHrModelConfigurationIfNeeded = async (targetRoot: string) => {
 };
 
 const printHrModelOverrideHint = (targetRoot: string) => {
-	process.stdout.write(
-		[
-			`[agenthub] HR model settings: ${path.join(targetRoot, "settings.json")}`,
-			`[agenthub] Change later with: ${cliCommand} doctor --target-root ${targetRoot} --agent ${hrPrimaryAgentName} --model <model>`,
-			`[agenthub] HR subagents: ${hrSubagentNames.join(", ")} (use the same doctor command with --agent <name>)`,
-		].join("\n") + "\n",
-	);
+	void targetRoot;
+	process.stdout.write(`Tip: change HR models later with '${cliCommand} doctor'.\n`);
 };
 
 const countConfiguredHrGithubSources = async (targetRoot: string): Promise<number | null> => {
@@ -1525,7 +1499,9 @@ const syncHrSourceInventoryOnFirstRun = async (targetRoot: string) => {
 	const sourceLabel = sourceParts.length > 0
 		? sourceParts.join(" + ")
 		: "configured HR sources";
-	process.stdout.write(`[agenthub] First run — syncing HR inventory from ${sourceLabel}...\n`);
+	process.stdout.write(
+		`\nStep 3/3 · Sync inventory\nSync the HR sourcer inventory from ${sourceLabel} — this may take a moment, please wait...\n`,
+	);
 
 	try {
 		const pythonCommand = resolvePythonCommand();
@@ -1556,10 +1532,11 @@ const syncHrSourceInventoryOnFirstRun = async (targetRoot: string) => {
 
 		const summary = stdout.trim();
 		if (code === 0) {
-			if (summary) process.stdout.write(`${summary}\n`);
-			process.stdout.write(
-				`[agenthub] HR source status: ${path.join(targetRoot, "source-status.json")}\n`,
-			);
+			void summary;
+			const repoSummary = configuredSourceCount && configuredSourceCount > 0
+				? `${configuredSourceCount} repo${configuredSourceCount === 1 ? "" : "s"}`
+				: "configured sources";
+			process.stdout.write(`✓ HR sourcer inventory sync complete (${repoSummary}).\n`);
 			return;
 		}
 
@@ -1582,15 +1559,29 @@ const ensureHrOfficeReadyOrBootstrap = async (
 ) => {
 	if (await hrHomeInitialized(targetRoot)) return;
 	const shouldPrompt = shouldUseInteractivePrompts();
+	process.stdout.write("\nHR Office — first-time setup\n\n");
+	process.stdout.write(
+		"Heads up: a full HR assemble can take about 20–30 minutes because AI may need time to choose and evaluate the souls and skills your agents need.\n\n",
+	);
+	process.stdout.write("This will:\n");
+	process.stdout.write("1. Choose an AI model for HR agents\n");
+	process.stdout.write("2. Create the HR Office workspace\n");
+	if (options.syncSourcesOnFirstRun ?? true) {
+		process.stdout.write("3. Sync the HR sourcer inventory (this may take a little longer)\n\n");
+	} else {
+		process.stdout.write("3. Skip inventory sync for now because you are assembling only\n\n");
+	}
 	const hrModelSelection = shouldPrompt
 		? await promptHrBootstrapModelSelection(targetRoot)
 		: undefined;
 	await applyHrModelSelection(targetRoot, hrModelSelection || {});
-	process.stdout.write(`✓ First run — initialised HR Office at ${targetRoot}\n`);
+	process.stdout.write(`\nStep 2/3 · Create workspace\n✓ First run — initialised HR Office at ${targetRoot}\n`);
 	printHrModelOverrideHint(targetRoot);
 	if (options.syncSourcesOnFirstRun ?? true) {
 		await syncHrSourceInventoryOnFirstRun(targetRoot);
 	}
+	process.stdout.write(`\n✓ HR Office is ready.\n`);
+	suppressNextHrRuntimeBanner = true;
 };
 
 const isHrRuntimeSelection = (selection?: RuntimeSelection) =>
@@ -3146,12 +3137,15 @@ if (parsed.command === "run" || parsed.command === "start" || parsed.command ===
 
 const finalConfigRoot = resolveConfigRoot(parsed);
 const result = await composeSelection(parsed, finalConfigRoot);
-printRuntimeBanner(
-	parsed.command === "hr"
-		? "HR Office"
-		: "My Team",
-	resolveSelectedHomeRoot(parsed) || defaultAgentHubHome(),
-);
+if (!(parsed.command === "hr" && suppressNextHrRuntimeBanner)) {
+	printRuntimeBanner(
+		parsed.command === "hr"
+			? "HR Office"
+			: "My Team",
+		resolveSelectedHomeRoot(parsed) || defaultAgentHubHome(),
+	);
+}
+suppressNextHrRuntimeBanner = false;
 if (shouldChmod()) {
 	await chmod(path.join(result.configRoot, "run.sh"), 0o755);
 }
