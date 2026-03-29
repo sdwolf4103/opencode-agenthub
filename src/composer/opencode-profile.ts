@@ -43,13 +43,24 @@ import {
 	mergeAgentHubSettingsDefaults,
 	hrPrimaryAgentName,
 	hrSubagentNames,
+	hrAgentNames,
+	loadNativeOpenCodePreferences,
+	listAvailableOpencodeModels,
+	probeOpencodeModelAvailability,
+	readHrKnownModelIds,
 	recommendedHrBootstrapModel,
 	recommendedHrBootstrapVariant,
 	readAgentHubSettings,
+	resolveHrBootstrapAgentModels,
+	validateHrAgentModelConfiguration,
 	writeAgentHubSettings,
 	type HrBootstrapModelSelection,
 	type HrSubagentModelStrategy,
 } from "./settings.js";
+import {
+	validateModelAgainstCatalog,
+	validateModelIdentifier,
+} from "./model-utils.js";
 import {
 	displayHomeConfigPath,
 	interactivePromptResetSequence,
@@ -293,8 +304,8 @@ FLAGS (hr)
   hr <profile>         Test an HR-home profile in the current workspace
   hr last              Reuse the last HR profile tested in this workspace
   hr set <profile>     Unsupported (use explicit '${cliCommand} hr <profile>' each time)
-  first bootstrap      Interactive terminals can choose recommended / free / custom
-                       defaults to openai/gpt-5.4-mini when left blank
+  first bootstrap      HR first asks about your situation, inspects resources,
+                       reports a recommendation, then lets you accept or override it
 
 FLAGS (new / compose profile)
   --from <profile>      Seed bundles/plugins from an existing profile
@@ -1078,61 +1089,400 @@ const ensureHomeReadyOrBootstrap = async (targetRoot = defaultAgentHubHome()) =>
 	process.stdout.write(`✓ First run — initialised coding system at ${targetRoot}\n`);
 };
 
+type HrModelCheckResult =
+	| { ok: true; selection: HrBootstrapModelSelection }
+	| {
+			ok: false;
+			selection: HrBootstrapModelSelection;
+			stage: "syntax" | "catalog" | "availability" | "probe_failed";
+			message: string;
+	  };
+
+type HrBootstrapIntent = "staff" | "review" | "prototype";
+
+type HrBootstrapResourceAssessment = {
+	configuredGithubSources: number | null;
+	configuredModelCatalogSources: number | null;
+	knownModels?: Set<string>;
+	availableModels?: string[];
+	freeModels: string[];
+	nativeModel?: string;
+	recommendedAvailability: Awaited<ReturnType<typeof probeOpencodeModelAvailability>>;
+};
+
+type HrBootstrapRecommendation = {
+	strategy: "recommended" | "free" | "custom" | "native";
+	summary: string;
+	reason: string;
+};
+
+const hrBootstrapIntentSummary: Record<HrBootstrapIntent, string> = {
+	staff: "staff a new team",
+	review: "review and refine an existing team",
+	prototype: "prototype an HR setup before deeper staffing work",
+};
+
+const formatCountLabel = (
+	count: number | null,
+	singular: string,
+	plural = `${singular}s`,
+) => {
+	if (count === null) return `unknown ${plural}`;
+	return `${count} ${count === 1 ? singular : plural}`;
+};
+
+const inspectHrBootstrapResources = async (
+	hrRoot: string,
+): Promise<HrBootstrapResourceAssessment> => {
+	const [configuredGithubSources, configuredModelCatalogSources, knownModels, availableModels, freeModels, native] =
+		await Promise.all([
+			countConfiguredHrGithubSources(hrRoot),
+			countConfiguredHrModelCatalogSources(hrRoot),
+			readHrKnownModelIds(hrRoot),
+			listAvailableOpencodeModels(),
+			listOpencodeFreeModels(),
+			loadNativeOpenCodePreferences(),
+		]);
+	const recommendedAvailability = await probeOpencodeModelAvailability(
+		recommendedHrBootstrapModel,
+		{ listModels: async () => availableModels },
+	);
+	return {
+		configuredGithubSources,
+		configuredModelCatalogSources,
+		knownModels,
+		availableModels,
+		freeModels,
+		nativeModel: native?.model,
+		recommendedAvailability,
+	};
+};
+
+const recommendHrBootstrapSelection = (
+	resources: HrBootstrapResourceAssessment,
+): HrBootstrapRecommendation => {
+	if (resources.recommendedAvailability.available) {
+		return {
+			strategy: "recommended",
+			summary: `I recommend starting with the recommended HR model (${recommendedHrBootstrapModel}).`,
+			reason: "It is available in this opencode environment and matches the built-in HR default.",
+		};
+	}
+	if (resources.freeModels.length > 0) {
+		return {
+			strategy: "free",
+			summary: "I recommend starting with the best available free HR model.",
+			reason: `${resources.recommendedAvailability.message} A free fallback is available right now.`,
+		};
+	}
+	const nativeModelSyntax = resources.nativeModel
+		? validateModelIdentifier(resources.nativeModel)
+		: undefined;
+	if (resources.nativeModel && nativeModelSyntax?.ok) {
+		return {
+			strategy: "native",
+			summary: `I recommend reusing your native default model (${resources.nativeModel}).`,
+			reason: "No verified free fallback is visible, but your native opencode default looks usable.",
+		};
+	}
+	return {
+		strategy: "custom",
+		summary: "I recommend entering a custom HR model now.",
+		reason: "The recommended preset is not currently verified and no safer automatic fallback was found.",
+	};
+};
+
+const printHrBootstrapProcess = () => {
+	process.stdout.write("\n[PROCESS]\n");
+	process.stdout.write("- REQUIREMENTS -> understand your current HR situation\n");
+	process.stdout.write("- STAFFING PLAN -> inspect resources and default direction\n");
+	process.stdout.write("- CANDIDATE REVIEW -> compare safer model/setup choices\n");
+	process.stdout.write("- ARCHITECTURE REVIEW -> confirm the HR console setup\n");
+	process.stdout.write("- STAGING & CONFIRMATION -> write settings only after recommendation\n\n");
+};
+
+const promptHrBootstrapIntent = async (
+	rl: readline.Interface,
+): Promise<HrBootstrapIntent> => {
+	process.stdout.write("[REQUIREMENTS]\n");
+	process.stdout.write("Before we ask for detailed model choices, tell HR what kind of situation you are in today.\n");
+	return promptChoice(
+		rl,
+		"HR situation",
+		["staff", "review", "prototype"] as const,
+		"staff",
+	);
+};
+
+const printHrBootstrapAssessment = (
+	intent: HrBootstrapIntent,
+	resources: HrBootstrapResourceAssessment,
+	recommendation: HrBootstrapRecommendation,
+) => {
+	process.stdout.write(`\n[ASSESSMENT]\nToday: ${hrBootstrapIntentSummary[intent]}\n`);
+	process.stdout.write(
+		`- Configured HR sources: ${formatCountLabel(resources.configuredGithubSources, "GitHub repo")} + ${formatCountLabel(resources.configuredModelCatalogSources, "model catalog")}\n`,
+	);
+	process.stdout.write(
+		`- Synced HR model catalog: ${resources.knownModels ? formatCountLabel(resources.knownModels.size, "known model") : "not synced yet"}\n`,
+	);
+	process.stdout.write(
+		`- Native default model: ${resources.nativeModel || "not configured"}\n`,
+	);
+	process.stdout.write(
+		`- Current opencode models visible: ${resources.availableModels ? resources.availableModels.length : "unavailable"}\n`,
+	);
+	process.stdout.write(
+		`- Current free opencode models: ${resources.freeModels.length > 0 ? resources.freeModels.join(", ") : "none detected"}\n`,
+	);
+	if (!resources.recommendedAvailability.available) {
+		process.stdout.write(`- Recommended preset check: ${resources.recommendedAvailability.message}\n`);
+	}
+	process.stdout.write("\n[RECOMMENDATION]\n");
+	process.stdout.write(`${recommendation.summary}\n`);
+	process.stdout.write(`${recommendation.reason}\n\n`);
+};
+
+const buildHrModelSelection = async (
+	rl: readline.Interface,
+	hrRoot: string,
+	strategy: "recommended" | "free" | "custom" | "native",
+): Promise<HrBootstrapModelSelection> => {
+	if (strategy === "recommended") {
+		process.stdout.write(
+			`[agenthub] Recommended HR preset requires OpenAI model access in your opencode environment.\n`,
+		);
+		return {
+			consoleModel: recommendedHrBootstrapModel,
+			subagentStrategy: "recommended",
+			sharedSubagentModel: recommendedHrBootstrapModel,
+		};
+	}
+	if (strategy === "native") {
+		const native = await loadNativeOpenCodePreferences();
+		if (!native?.model) {
+			process.stdout.write("[agenthub] No native default model is configured. Choose another fallback.\n");
+			return buildHrModelSelection(rl, hrRoot, "free");
+		}
+		return {
+			consoleModel: native.model,
+			subagentStrategy: "native",
+			sharedSubagentModel: native.model,
+		};
+	}
+	if (strategy === "free") {
+		const freeModels = await listOpencodeFreeModels();
+		const fallbackFreeModel = freeModels.includes("opencode/minimax-m2.5-free")
+			? "opencode/minimax-m2.5-free"
+			: (freeModels[0] || "opencode/minimax-m2.5-free");
+		const choices = freeModels.length > 0 ? freeModels : [fallbackFreeModel];
+		process.stdout.write("Current opencode free models:\n");
+		const selected =
+			choices.length === 1
+				? (process.stdout.write(`  1. ${choices[0]}\n`), choices[0])
+				: await promptIndexedChoice(
+						rl,
+						"Choose a free model for HR",
+						choices,
+						fallbackFreeModel,
+					);
+		return {
+			consoleModel: selected,
+			subagentStrategy: "free",
+			sharedSubagentModel: selected,
+		};
+	}
+	const custom = await promptRequired(rl, "Custom HR model", recommendedHrBootstrapModel);
+	return {
+		consoleModel: custom,
+		subagentStrategy: "custom",
+		sharedSubagentModel: custom,
+	};
+};
+
+const checkHrBootstrapSelection = async (
+	hrRoot: string,
+	selection: HrBootstrapModelSelection,
+): Promise<HrModelCheckResult> => {
+	const model = selection.sharedSubagentModel || selection.consoleModel;
+	if (!model) {
+		return {
+			ok: false,
+			selection,
+			stage: "syntax",
+			message: "Model id cannot be blank.",
+		};
+	}
+	const syntax = validateModelIdentifier(model);
+	if (!syntax.ok) {
+		return { ok: false, selection, stage: "syntax", message: syntax.message };
+	}
+	const knownModels = await readHrKnownModelIds(hrRoot);
+	const catalog = validateModelAgainstCatalog(model, knownModels);
+	if (!catalog.ok) {
+		return { ok: false, selection, stage: "catalog", message: catalog.message };
+	}
+	const availability = await probeOpencodeModelAvailability(model, {
+		listModels: listAvailableOpencodeModels,
+	});
+	if (!availability.available) {
+		return {
+			ok: false,
+			selection,
+			stage: availability.reason === "probe_failed" ? "probe_failed" : "availability",
+			message: availability.message,
+		};
+	}
+	return { ok: true, selection };
+};
+
+const promptValidatedHrModelSelection = async (
+	rl: readline.Interface,
+	hrRoot: string,
+	strategy: "recommended" | "free" | "custom" | "native",
+): Promise<HrBootstrapModelSelection> => {
+	let selection = await buildHrModelSelection(rl, hrRoot, strategy);
+	while (true) {
+		const check = await checkHrBootstrapSelection(hrRoot, selection);
+		if (check.ok) return check.selection;
+		process.stdout.write(`${check.message}\n`);
+		if (check.stage === "syntax" && selection.subagentStrategy === "custom") {
+			selection = await buildHrModelSelection(rl, hrRoot, "custom");
+			continue;
+		}
+		const action = await promptChoice(
+			rl,
+			check.stage === "probe_failed"
+				? "Model verification failed — continue or choose a fallback"
+				: "Choose a fallback",
+			(["continue", "free", "native", "custom", "retry recommended"] as const),
+			check.stage === "probe_failed" ? "continue" : "free",
+		);
+		if (action === "continue") return selection;
+		selection = await buildHrModelSelection(
+			rl,
+			hrRoot,
+			action === "retry recommended" ? "recommended" : action,
+		);
+	}
+};
+
 const promptHrBootstrapModelSelection = async (
 	hrRoot: string,
 ): Promise<HrBootstrapModelSelection> => {
 	const rl = createPromptInterface();
 	try {
 		process.stdout.write("\nFirst-time HR Office setup\n");
-		process.stdout.write("Choose an HR model preset:\n");
-		process.stdout.write(
-			`  recommended  Use ${recommendedHrBootstrapModel} (${recommendedHrBootstrapVariant})\n`,
-		);
-		process.stdout.write(
-			"  free         Pick from current opencode free models (quality may drop)\n",
-		);
-		process.stdout.write("  custom       Enter any model id yourself\n\n");
-		const subagentStrategy = await promptChoice(
+		printHrBootstrapProcess();
+		const intent = await promptHrBootstrapIntent(rl);
+		const resources = await inspectHrBootstrapResources(hrRoot);
+		const recommendation = recommendHrBootstrapSelection(resources);
+		printHrBootstrapAssessment(intent, resources, recommendation);
+		while (true) {
+			const action = await promptChoice(
+				rl,
+				"Apply this recommendation now",
+				["accept", "recommended", "free", "native", "custom"] as const,
+				"accept",
+			);
+			const strategy =
+				action === "accept" ? recommendation.strategy : action;
+			const validated = await promptValidatedHrModelSelection(rl, hrRoot, strategy);
+			const finalModel = validated.sharedSubagentModel || validated.consoleModel;
+			if (!finalModel) continue;
+			const finalSyntax = validateModelIdentifier(finalModel);
+			if (finalSyntax.ok) {
+				process.stdout.write(
+					`\n[agenthub] HR settings will be written to ${path.join(hrRoot, "settings.json")}\n`,
+				);
+				return validated;
+			}
+		}
+	} finally {
+		rl.close();
+	}
+};
+
+const shouldUseInteractivePrompts = () =>
+	process.env.OPENCODE_AGENTHUB_FORCE_INTERACTIVE_PROMPTS === "1" ||
+	Boolean(process.stdin.isTTY && process.stdout.isTTY);
+
+const applyHrModelSelection = async (
+	targetRoot: string,
+	selection: HrBootstrapModelSelection,
+) => {
+	await installHrOfficeHomeWithOptions({
+		hrRoot: targetRoot,
+		hrModelSelection: selection,
+	});
+};
+
+const repairHrModelConfigurationIfNeeded = async (targetRoot: string) => {
+	const settings = await readAgentHubSettings(targetRoot);
+	if (!shouldUseInteractivePrompts()) {
+		for (const agentName of hrAgentNames) {
+			const model = settings?.agents?.[agentName]?.model;
+			if (typeof model !== "string" || model.trim().length === 0) continue;
+			const syntax = validateModelIdentifier(model);
+			if (!syntax.ok) {
+				fail(`HR model configuration needs attention. Agent '${agentName}' model '${model}' is invalid: ${syntax.message}`);
+			}
+		}
+		return;
+	}
+	const status = await validateHrAgentModelConfiguration(targetRoot, settings);
+	if (status.valid) return;
+	const rl = createPromptInterface();
+	try {
+		process.stdout.write("[agenthub] HR model configuration needs attention.\n");
+		if (status.message) process.stdout.write(`${status.message}\n`);
+		const repair = await promptBoolean(
 			rl,
-			"HR model preset",
-			["recommended", "free", "custom"] as const,
-			"recommended",
+			"Reconfigure HR models now?",
+			true,
 		);
-		let sharedSubagentModel: string | undefined;
-		let consoleModel: string | undefined;
-
-		if (subagentStrategy === "recommended") {
-			consoleModel = recommendedHrBootstrapModel;
-			sharedSubagentModel = recommendedHrBootstrapModel;
+		if (!repair) {
+			fail("Aborted before repairing invalid HR model configuration.");
 		}
-		if (subagentStrategy === "free") {
-			const freeModels = await listOpencodeFreeModels();
-			const fallbackFreeModel = freeModels.includes("opencode/minimax-m2.5-free")
-				? "opencode/minimax-m2.5-free"
-				: (freeModels[0] || "opencode/minimax-m2.5-free");
-			process.stdout.write("Current opencode free models:\n");
-			sharedSubagentModel = await promptIndexedChoice(
-				rl,
-				"Choose a free model for HR",
-				freeModels.length > 0 ? freeModels : [fallbackFreeModel],
-				fallbackFreeModel,
-			);
-			consoleModel = sharedSubagentModel;
-		} else if (subagentStrategy === "custom") {
-			sharedSubagentModel = await promptRequired(
-				rl,
-				"Custom HR model",
-				recommendedHrBootstrapModel,
-			);
-			consoleModel = sharedSubagentModel;
+		const fallback = await promptChoice(
+			rl,
+			"Choose a fallback",
+			["free", "native", "custom", "retry recommended"] as const,
+			"free",
+		);
+		const validated = await promptValidatedHrModelSelection(
+			rl,
+			targetRoot,
+			fallback === "retry recommended" ? "recommended" : fallback,
+		);
+		const resolved = await resolveHrBootstrapAgentModels({
+			targetRoot,
+			selection: validated,
+		});
+		const merged = mergeAgentHubSettingsDefaults(settings || {});
+		merged.agents = merged.agents || {};
+		for (const agentName of hrAgentNames) {
+			const resolvedSelection = resolved.agentModels[agentName];
+			merged.agents[agentName] = {
+				...(merged.agents[agentName] || {}),
+				model: resolvedSelection.model,
+				...(resolvedSelection.variant ? { variant: resolvedSelection.variant } : {}),
+			};
+			if (!resolvedSelection.variant) delete merged.agents[agentName].variant;
 		}
-
-		process.stdout.write(`\n[agenthub] HR settings will be written to ${path.join(hrRoot, "settings.json")}\n`);
-		return {
-			consoleModel,
-			subagentStrategy,
-			sharedSubagentModel,
+		merged.meta = {
+			...merged.meta,
+			onboarding: {
+				...merged.meta?.onboarding,
+				modelStrategy: resolved.strategy,
+				mode: merged.meta?.onboarding?.mode || "hr-office",
+				importedNativeBasics: merged.meta?.onboarding?.importedNativeBasics ?? true,
+				importedNativeAgents: merged.meta?.onboarding?.importedNativeAgents ?? true,
+				createdAt: merged.meta?.onboarding?.createdAt || new Date().toISOString(),
+			},
 		};
+		await writeAgentHubSettings(targetRoot, merged);
+		process.stdout.write("[agenthub] Updated HR model configuration.\n");
 	} finally {
 		rl.close();
 	}
@@ -1263,14 +1613,11 @@ const ensureHrOfficeReadyOrBootstrap = async (
 	options: { syncSourcesOnFirstRun?: boolean } = {},
 ) => {
 	if (await hrHomeInitialized(targetRoot)) return;
-	const shouldPrompt = process.stdin.isTTY && process.stdout.isTTY;
+	const shouldPrompt = shouldUseInteractivePrompts();
 	const hrModelSelection = shouldPrompt
 		? await promptHrBootstrapModelSelection(targetRoot)
 		: undefined;
-	await installHrOfficeHomeWithOptions({
-		hrRoot: targetRoot,
-		hrModelSelection,
-	});
+	await applyHrModelSelection(targetRoot, hrModelSelection || {});
 	process.stdout.write(`✓ First run — initialised HR Office at ${targetRoot}\n`);
 	printHrModelOverrideHint(targetRoot);
 	if (options.syncSourcesOnFirstRun ?? true) {
@@ -1511,8 +1858,30 @@ const createPromptInterface = () => {
 	});
 };
 
-const askPrompt = async (rl: readline.Interface, question: string): Promise<string> =>
-	stripTerminalControlInput(await rl.question(question));
+const scriptedPromptAnswers = (() => {
+	const raw = process.env.OPENCODE_AGENTHUB_SCRIPTED_ANSWERS;
+	if (!raw) return undefined;
+	try {
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed)
+			? parsed.map((value) => (typeof value === "string" ? value : String(value)))
+			: undefined;
+	} catch {
+		return raw.split("\n");
+	}
+})();
+
+let scriptedPromptIndex = 0;
+
+const askPrompt = async (rl: readline.Interface, question: string): Promise<string> => {
+	if (scriptedPromptAnswers && scriptedPromptIndex < scriptedPromptAnswers.length) {
+		const answer = scriptedPromptAnswers[scriptedPromptIndex++] || "";
+		const sanitized = stripTerminalControlInput(answer);
+		process.stdout.write(`${question}${sanitized}\n`);
+		return sanitized;
+	}
+	return stripTerminalControlInput(await rl.question(question));
+};
 
 const promptRequired = async (
 	rl: readline.Interface,
@@ -2780,6 +3149,7 @@ if (parsed.command === "hr") {
 	await ensureHrOfficeReadyOrBootstrap(resolveSelectedHomeRoot(parsed), {
 		syncSourcesOnFirstRun: !parsed.assembleOnly,
 	});
+	await repairHrModelConfigurationIfNeeded(resolveSelectedHomeRoot(parsed) || defaultHrHome());
 	if (parsed.hrIntent?.kind === "office") {
 		parsed.workspace = resolveSelectedHomeRoot(parsed) || defaultHrHome();
 	} else if (parsed.hrIntent?.kind === "compose") {

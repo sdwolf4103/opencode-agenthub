@@ -3,9 +3,15 @@ import { readdir, readFile, access, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
 	loadNativeOpenCodeConfig,
+	probeOpencodeModelAvailability,
+	readHrKnownModelIds,
 	readAgentHubSettings,
 	writeAgentHubSettings,
 } from "../../composer/settings.js";
+import {
+	validateModelAgainstCatalog,
+	validateModelIdentifier,
+} from "../../composer/model-utils.js";
 import {
 	fixMissingGuards,
 	createBundleForSoul,
@@ -937,6 +943,20 @@ export async function updateAgentModelOverride(
 		}
 		await writeAgentHubSettings(targetRoot, settings);
 		return `Cleared model override for '${agentName}'.`;
+	}
+
+	const syntax = validateModelIdentifier(trimmed);
+	if (!syntax.ok) {
+		return `${syntax.message} Use provider/model format or leave blank to clear the override.`;
+	}
+	const knownModels = await readHrKnownModelIds(targetRoot);
+	const catalog = validateModelAgainstCatalog(trimmed, knownModels);
+	if (!catalog.ok) {
+		return `${catalog.message} Sync HR sources or choose a listed model, then try again.`;
+	}
+	const availability = await probeOpencodeModelAvailability(trimmed);
+	if (!availability.available) {
+		return `${availability.message} Pick another model or clear the override.`;
 	}
 
 	settings.agents[agentName] = {

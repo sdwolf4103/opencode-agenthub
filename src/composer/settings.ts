@@ -10,11 +10,18 @@ import type {
 	WorkflowInjectionSourceConfig,
 	WorkflowInjectionTrigger,
 } from "../types.js";
-import { normalizeModelSelection, pickModelSelection } from "./model-utils.js";
+import { spawn } from "node:child_process";
+import {
+	normalizeModelSelection,
+	pickModelSelection,
+	validateModelAgainstCatalog,
+	validateModelIdentifier,
+	type ModelValidationResult,
+} from "./model-utils.js";
 import { buildBuiltinVersionManifest } from "./builtin-assets.js";
 import { getDefaultProfilePlugins } from "./defaults.js";
 import { readPackageVersion } from "./package-version.js";
-import { resolveHomeConfigRoot } from "./platform.js";
+import { resolveHomeConfigRoot, spawnOptions } from "./platform.js";
 
 type InstallMode = "minimal" | "auto" | "hr-office";
 
@@ -69,6 +76,20 @@ export type ResolvedHrBootstrapModels = {
 		}
 	>;
 	strategy: HrPersistedModelStrategy;
+};
+
+export type ModelProbeResult =
+	| { available: true }
+	| { available: false; reason: "probe_failed" | "unavailable"; message: string };
+
+export type HrModelValidationStatus = {
+	valid: boolean;
+	agentName?: string;
+	model?: string;
+	syntax?: ModelValidationResult;
+	catalog?: ModelValidationResult;
+	availability?: ModelProbeResult;
+	message?: string;
 };
 
 type NativeOpenCodeConfig = {
@@ -412,6 +433,123 @@ const fallbackInstalledModel = (
 	installedModels.auto?.model ||
 	Object.values(installedModels)[0]?.model ||
 	nativeModel;
+
+export const readHrKnownModelIds = async (targetRoot: string): Promise<Set<string> | undefined> => {
+	const filePath = path.join(targetRoot, "inventory", "models", "valid-model-ids.txt");
+	try {
+		const raw = await readFile(filePath, "utf8");
+		const values = raw
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+		return values.length > 0 ? new Set(values) : undefined;
+	} catch {
+		return undefined;
+	}
+};
+
+export const listAvailableOpencodeModels = async (): Promise<string[] | undefined> =>
+	new Promise((resolve) => {
+		const child = spawn("opencode", ["models"], {
+			stdio: ["ignore", "pipe", "ignore"],
+			...spawnOptions(),
+		});
+		const timeout = setTimeout(() => {
+			child.kill();
+			resolve(undefined);
+		}, 15000);
+		let stdout = "";
+		child.stdout?.on("data", (chunk) => {
+			stdout += chunk.toString();
+		});
+		child.on("error", () => {
+			clearTimeout(timeout);
+			resolve(undefined);
+		});
+		child.on("close", () => {
+			clearTimeout(timeout);
+			const models = stdout
+				.split(/\r?\n/)
+				.map((line) => line.trim())
+				.filter(Boolean);
+			resolve(models.length > 0 ? [...new Set(models)].sort() : undefined);
+		});
+	});
+
+export const probeOpencodeModelAvailability = async (
+	model: string,
+	options: { listModels?: () => Promise<string[] | undefined> } = {},
+): Promise<ModelProbeResult> => {
+	const models = await (options.listModels ?? listAvailableOpencodeModels)();
+	if (!models) {
+		return {
+			available: false,
+			reason: "probe_failed",
+			message:
+				"Unable to verify model availability from opencode. Continue only if you know this model works in your environment.",
+		};
+	}
+	return models.includes(model)
+		? { available: true }
+		: {
+			available: false,
+			reason: "unavailable",
+			message: `Model '${model}' is not available in the current opencode environment.`,
+		};
+};
+
+const agentModelValidationMessage = (
+	agentName: string,
+	model: string,
+	status: ModelValidationResult | ModelProbeResult,
+) => `Agent '${agentName}' model '${model}' is invalid: ${status.message}`;
+
+export const validateHrAgentModelConfiguration = async (
+	targetRoot: string,
+	settings?: AgentHubSettings | null,
+	options: { listModels?: () => Promise<string[] | undefined> } = {},
+): Promise<HrModelValidationStatus> => {
+	const currentSettings = settings ?? (await readAgentHubSettings(targetRoot));
+	if (!currentSettings?.agents) return { valid: true };
+	const knownModels = await readHrKnownModelIds(targetRoot);
+	const availabilityCache = new Map<string, ModelProbeResult>();
+	for (const agentName of hrAgentNames) {
+		const model = currentSettings.agents[agentName]?.model;
+		if (typeof model !== "string" || model.trim().length === 0) continue;
+		const syntax = validateModelIdentifier(model);
+		if (!syntax.ok) {
+			return {
+				valid: false,
+				agentName,
+				model,
+				syntax,
+				message: agentModelValidationMessage(agentName, model, syntax),
+			};
+		}
+		const catalog = validateModelAgainstCatalog(model, knownModels);
+		if (!catalog.ok) {
+			return {
+				valid: false,
+				agentName,
+				model,
+				catalog,
+				message: agentModelValidationMessage(agentName, model, catalog),
+			};
+		}
+		const availability = availabilityCache.get(model) || await probeOpencodeModelAvailability(model, options);
+		availabilityCache.set(model, availability);
+		if (!availability.available && availability.reason !== "probe_failed") {
+			return {
+				valid: false,
+				agentName,
+				model,
+				availability,
+				message: agentModelValidationMessage(agentName, model, availability),
+			};
+		}
+	}
+	return { valid: true };
+};
 
 export const resolveHrBootstrapAgentModels = async ({
 	targetRoot,

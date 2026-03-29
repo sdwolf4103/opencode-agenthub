@@ -1,6 +1,7 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import path from "node:path";
 import { readAgentHubSettings } from "../../composer/settings.js";
+import { validateModelIdentifier } from "../../composer/model-utils.js";
 
 // Utility functions
 const readJson = async <T>(filePath: string): Promise<T> => {
@@ -18,7 +19,15 @@ const pathExists = async (p: string): Promise<boolean> => {
 };
 
 export interface DiagnosticIssue {
-	type: "missing_guards" | "orphaned_souls" | "orphaned_skills" | "no_profiles" | "no_bundles" | "invalid_settings" | "omo_mixed_profile";
+	type:
+		| "missing_guards"
+		| "orphaned_souls"
+		| "orphaned_skills"
+		| "no_profiles"
+		| "no_bundles"
+		| "invalid_settings"
+		| "omo_mixed_profile"
+		| "model_invalid_syntax";
 	severity: "error" | "warning" | "info";
 	message: string;
 	details?: unknown;
@@ -142,8 +151,32 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 		report.issues.push(omoIssue);
 	}
 
+	for (const issue of diagnoseInvalidModelSyntax(settings)) {
+		report.issues.push(issue);
+	}
+
 	return report;
 }
+
+const diagnoseInvalidModelSyntax = (
+	settings: Awaited<ReturnType<typeof readAgentHubSettings>>,
+): DiagnosticIssue[] => {
+	if (!settings?.agents) return [];
+	const issues: DiagnosticIssue[] = [];
+	for (const [agentName, agent] of Object.entries(settings.agents)) {
+		if (typeof agent.model !== "string" || agent.model.trim().length === 0) continue;
+		const syntax = validateModelIdentifier(agent.model);
+		if (!syntax.ok) {
+			issues.push({
+				type: "model_invalid_syntax",
+				severity: "error",
+				message: `Agent '${agentName}' has an invalid model override: ${syntax.message}`,
+				details: { agentName, model: agent.model },
+			});
+		}
+	}
+	return issues;
+};
 
 /**
  * Check for missing required guards in settings

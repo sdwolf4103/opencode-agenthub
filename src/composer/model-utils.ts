@@ -3,6 +3,10 @@ export type ModelSelection = {
 	variant?: string;
 };
 
+export type ModelValidationResult =
+	| { ok: true }
+	| { ok: false; reason: "blank" | "format" | "unknown"; message: string };
+
 const normalizeOptionalString = (value?: string | null): string | undefined => {
 	if (typeof value !== "string") return undefined;
 	const trimmed = value.trim();
@@ -50,4 +54,33 @@ export const pickModelSelection = (
 		...(model ? { model } : {}),
 		...(model && variant ? { variant } : {}),
 	};
+};
+
+export const validateModelIdentifier = (value?: string | null): ModelValidationResult => {
+	const trimmed = normalizeOptionalString(value);
+	if (!trimmed) {
+		return { ok: false, reason: "blank", message: "Model id cannot be blank." };
+	}
+	if (!trimmed.includes("/")) {
+		return {
+			ok: false,
+			reason: "format",
+			message: "Model id must use provider/model format.",
+		};
+	}
+	return { ok: true };
+};
+
+export const validateModelAgainstCatalog = (
+	value: string,
+	knownModels?: ReadonlySet<string>,
+): ModelValidationResult => {
+	if (!knownModels || knownModels.size === 0) return { ok: true };
+	return knownModels.has(value)
+		? { ok: true }
+		: {
+			ok: false,
+			reason: "unknown",
+			message: `Model '${value}' was not found in the HR model catalog.`,
+		};
 };

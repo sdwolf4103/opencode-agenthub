@@ -75,6 +75,48 @@ const writeExecutable = async ({
 	return targetPath;
 };
 
+const writeFakeOpencodeModels = async ({
+	targetBase,
+	allModels,
+	freeModels,
+}: {
+	targetBase: string;
+	allModels: string[];
+	freeModels: string[];
+}) =>
+	writeExecutable({
+		targetBase,
+		posixContents: [
+			"#!/usr/bin/env node",
+			"const args = process.argv.slice(2);",
+			`const allModels = ${JSON.stringify(allModels)};`,
+			`const freeModels = ${JSON.stringify(freeModels)};`,
+			"if (args[0] === 'models' && args[1] === 'opencode') {",
+			"  process.stdout.write(freeModels.join(String.fromCharCode(10)) + (freeModels.length ? String.fromCharCode(10) : ''));",
+			"  process.exit(0);",
+			"}",
+			"if (args[0] === 'models') {",
+			"  process.stdout.write(allModels.join(String.fromCharCode(10)) + (allModels.length ? String.fromCharCode(10) : ''));",
+			"  process.exit(0);",
+			"}",
+			"process.exit(0);",
+			"",
+		].join("\n"),
+		windowsContents: [
+			"@echo off",
+			'if "%1"=="models" if "%2"=="opencode" (',
+			...freeModels.map((model) => `  echo ${model}`),
+			"  exit /b 0",
+			")",
+			'if "%1"=="models" (',
+			...allModels.map((model) => `  echo ${model}`),
+			"  exit /b 0",
+			")",
+			"exit /b 0",
+			"",
+		].join("\r\n"),
+	});
+
 const runCli = async ({
 	args,
 	cwd,
@@ -86,10 +128,21 @@ const runCli = async ({
 	env?: Record<string, string | undefined>;
 	input?: string;
 }) => {
+	const scriptedAnswers = input
+		? JSON.stringify(
+				input
+					.split("\n")
+					.filter((line, index, values) => line.length > 0 || index < values.length - 1),
+			)
+		: undefined;
 	const child = spawn("bun", [cliEntry, ...args], {
 		...spawnOptions(windows),
 		cwd,
-		env: { ...process.env, ...env },
+		env: {
+			...process.env,
+			...(scriptedAnswers ? { OPENCODE_AGENTHUB_SCRIPTED_ANSWERS: scriptedAnswers } : {}),
+			...env,
+		},
 		stdio: ["pipe", "pipe", "pipe"],
 	});
 
@@ -101,9 +154,6 @@ const runCli = async ({
 	child.stderr.on("data", (chunk) => {
 		stderr += chunk.toString();
 	});
-	if (input) {
-		child.stdin.write(input);
-	}
 	child.stdin.end();
 
 	const code = await new Promise<number>((resolve, reject) => {
@@ -2328,11 +2378,18 @@ test("interactive HR bootstrap strips Windows mouse-tracking escape noise", asyn
 		const personalHome = path.join(tempRoot, "personal-home");
 		const hrHome = path.join(tempRoot, "hr-home");
 		const workspace = path.join(tempRoot, "workspace");
+		const fakeBin = path.join(tempRoot, "bin");
 		await Promise.all([
 			mkdir(homeDir, { recursive: true }),
 			mkdir(xdgHomeDir, { recursive: true }),
 			mkdir(workspace, { recursive: true }),
+			mkdir(fakeBin, { recursive: true }),
 		]);
+		await writeFakeOpencodeModels({
+			targetBase: path.join(fakeBin, "opencode"),
+			allModels: ["openai/gpt-5.4-mini", "opencode/minimax-m2.5-free"],
+			freeModels: ["opencode/minimax-m2.5-free"],
+		});
 
 		const result = await runCli({
 			args: ["hr", "--assemble-only"],
@@ -2340,17 +2397,175 @@ test("interactive HR bootstrap strips Windows mouse-tracking escape noise", asyn
 			env: {
 				OPENCODE_AGENTHUB_HOME: personalHome,
 				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				OPENCODE_AGENTHUB_FORCE_INTERACTIVE_PROMPTS: "1",
 				HOME: homeDir,
 				XDG_CONFIG_HOME: xdgHomeDir,
+				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
 			},
-			input: "\u001b[<35;24;14mrecommended\n",
+			input: "\u001b[<35;24;14mstaff\naccept\n",
 		});
 
 		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("[PROCESS]");
+		expect(result.stdout).toContain("[REQUIREMENTS]");
+		expect(result.stdout).toContain("[ASSESSMENT]");
+		expect(result.stdout).toContain("[RECOMMENDATION]");
 		expect(result.stdout).not.toContain("35;24;14m");
 		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
 		expect(settings.agents.hr.model).toBe("openai/gpt-5.4-mini");
 		expect(settings.meta.onboarding.modelStrategy).toBe("recommended");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("interactive hr bootstrap recommends a fallback after assessing available resources", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-recommended-fallback-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const fakeBin = path.join(tempRoot, "bin");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(fakeBin, { recursive: true }),
+		]);
+		await writeFakeOpencodeModels({
+			targetBase: path.join(fakeBin, "opencode"),
+			allModels: ["opencode/minimax-m2.5-free"],
+			freeModels: ["opencode/minimax-m2.5-free"],
+		});
+
+		const result = await runCli({
+			args: ["hr", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				OPENCODE_AGENTHUB_FORCE_INTERACTIVE_PROMPTS: "1",
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
+			},
+			input: "staff\naccept\n",
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("[ASSESSMENT]");
+		expect(result.stdout).toContain("Today: staff a new team");
+		expect(result.stdout).toContain("Model 'openai/gpt-5.4-mini' is not available");
+		expect(result.stdout).toContain("[RECOMMENDATION]");
+		expect(result.stdout).toContain("I recommend starting with the best available free HR model");
+		expect(result.stdout).toContain("Apply this recommendation now");
+		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
+		expect(settings.meta.onboarding.modelStrategy).toBe("free");
+		expect(settings.agents.hr.model).toBe("opencode/minimax-m2.5-free");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("interactive hr bootstrap re-prompts until custom model id is valid", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-custom-validation-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const fakeBin = path.join(tempRoot, "bin");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(fakeBin, { recursive: true }),
+		]);
+		await writeFakeOpencodeModels({
+			targetBase: path.join(fakeBin, "opencode"),
+			allModels: ["openai/gpt-5.4-mini", "opencode/minimax-m2.5-free"],
+			freeModels: ["opencode/minimax-m2.5-free"],
+		});
+
+		const result = await runCli({
+			args: ["hr", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				OPENCODE_AGENTHUB_FORCE_INTERACTIVE_PROMPTS: "1",
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
+			},
+			input: "review\ncustom\nbadmodel\nopenai/gpt-5.4-mini\n",
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Today: review and refine an existing team");
+		expect(result.stdout).toContain("Apply this recommendation now");
+		expect(result.stdout).toContain("Model id must use provider/model format.");
+		const settings = JSON.parse(await readFile(path.join(hrHome, "settings.json"), "utf8"));
+		expect(settings.meta.onboarding.modelStrategy).toBe("custom");
+		expect(settings.agents.hr.model).toBe("openai/gpt-5.4-mini");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("interactive hr command repairs invalid persisted hr models before compose", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-repair-invalid-model-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const fakeBin = path.join(tempRoot, "bin");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(fakeBin, { recursive: true }),
+		]);
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+		const settingsPath = path.join(hrHome, "settings.json");
+		const settings = JSON.parse(await readFile(settingsPath, "utf8"));
+		settings.meta.onboarding.modelStrategy = "custom";
+		for (const agentName of ["hr", "hr-planner", "hr-sourcer", "hr-evaluator", "hr-cto", "hr-adapter", "hr-verifier"]) {
+			settings.agents[agentName].model = "badmodel";
+			delete settings.agents[agentName].variant;
+		}
+		await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+		await writeFakeOpencodeModels({
+			targetBase: path.join(fakeBin, "opencode"),
+			allModels: ["opencode/minimax-m2.5-free"],
+			freeModels: ["opencode/minimax-m2.5-free"],
+		});
+
+		const result = await runCli({
+			args: ["hr", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				OPENCODE_AGENTHUB_FORCE_INTERACTIVE_PROMPTS: "1",
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ""}`,
+			},
+			input: "y\nfree\n",
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("HR model configuration needs attention");
+		expect(result.stdout).toContain("Updated HR model configuration");
+		const repaired = JSON.parse(await readFile(settingsPath, "utf8"));
+		expect(repaired.meta.onboarding.modelStrategy).toBe("free");
+		expect(repaired.agents.hr.model).toBe("opencode/minimax-m2.5-free");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
