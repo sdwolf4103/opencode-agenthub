@@ -66,6 +66,18 @@ const installImportedMcpServerDependencies = async (
 	if (!(await pathExists(targetMcpServersRoot))) return;
 	const packageManifest = path.join(targetMcpServersRoot, "package.json");
 	if (!(await pathExists(packageManifest))) return;
+	const packageJson = JSON.parse(await readFile(packageManifest, "utf8")) as Record<string, unknown>;
+	const dependencyFields = [
+		"dependencies",
+		"devDependencies",
+		"optionalDependencies",
+		"peerDependencies",
+	] as const;
+	const hasDependencies = dependencyFields.some((field) => {
+		const value = packageJson[field];
+		return value != null && typeof value === "object" && Object.keys(value as Record<string, unknown>).length > 0;
+	});
+	if (!hasDependencies) return;
 	try {
 		await installPackageDependencies(targetMcpServersRoot);
 	} catch (error) {

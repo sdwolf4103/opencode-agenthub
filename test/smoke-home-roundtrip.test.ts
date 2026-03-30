@@ -99,6 +99,15 @@ test("exported Agent Hub home can round-trip into equivalent runtime config", as
 			settingsMode: "replace",
 		});
 		expect(importReport.settingsAction).toBe("copied");
+		expect(await Bun.file(path.join(importedHome, "mcp-servers", "package-lock.json")).exists()).toBe(
+			false,
+		);
+		expect(await Bun.file(path.join(importedHome, "mcp-servers", "bun.lock")).exists()).toBe(
+			false,
+		);
+		expect(await Bun.file(path.join(importedHome, "mcp-servers", "node_modules")).exists()).toBe(
+			false,
+		);
 
 		process.env.OPENCODE_AGENTHUB_HOME = sourceHome;
 		const sourceResult = await composeWorkspace(workspaceA, "auto");
