@@ -50,7 +50,7 @@ test("HR planner and assembly guidance defer model decisions until assembly", as
 	expect(finalCheckSkill).toContain("model preferences were confirmed before assembly");
 });
 
-test("HR protocol moves default-profile choice to final staging and forbids model hallucination without catalog", async () => {
+test("HR prompt docs do not proactively ask about default-profile and use opencode environment for model confirmation", async () => {
 	const [hrSoul, hrProtocol, hrAdapter, hrBoundaries] = await Promise.all([
 		readRepoFile("src/composer/library/souls/hr.md"),
 		readRepoFile("src/composer/library/instructions/hr-protocol.md"),
@@ -58,14 +58,21 @@ test("HR protocol moves default-profile choice to final staging and forbids mode
 		readRepoFile("src/composer/library/instructions/hr-boundaries.md"),
 	]);
 
+	// HR must not ask about default-profile
 	expect(hrSoul).not.toContain(
-		"Also ask whether the promoted profile should become the default profile for future bare `agenthub start` runs.",
+		"Also ask whether the promoted profile should become the default personal profile",
 	);
-	expect(hrSoul).toContain("whether the promoted profile will become the default personal profile");
-	expect(hrProtocol).not.toContain("whether promote should set the new profile as the default personal profile");
-	expect(hrProtocol).toContain("If the synced model catalog is empty or missing, do not invent model names");
-	expect(hrAdapter).toContain("If the synced model catalog is empty or missing, do not write any `agent.model` value.");
-	expect(hrBoundaries).toContain("no HR agent may propose, fill in, or confirm a concrete `provider/model` id");
+	expect(hrSoul).not.toContain("whether the promoted profile will become the default personal profile");
+
+	// Model confirmation uses opencode environment, not synced catalog
+	expect(hrSoul).not.toContain("Read the synced catalog at");
+	expect(hrSoul).toContain("opencode environment");
+	expect(hrProtocol).not.toContain("synced catalog contains verified entries");
+	expect(hrProtocol).toContain("opencode environment");
+	expect(hrAdapter).not.toContain("synced catalog at `$HR_HOME/inventory/models/catalog.json`");
+	expect(hrAdapter).toContain("opencode environment");
+	expect(hrBoundaries).toContain("opencode environment availability probing");
+	expect(hrBoundaries).not.toContain("<pending-catalog-sync>");
 });
 
 test("HR composition rules require a visible primary agent and prefer pure soul plus skill hosts", async () => {
@@ -98,6 +105,37 @@ test("HR large-team guidance recommends one to two primary agents with subagents
 	expect(hrSoul).toContain("one to two primary agents with the rest deployed as subagents");
 	expect(hrCto).toContain("If more than four agents are recommended");
 	expect(hrCto).toContain("one to two primary agents with the rest as subagents");
+});
+
+test("HR model confirmation docs consistently reference opencode environment probing", async () => {
+	const [hrCto, assemblySkill, finalCheckSkill, staffingSkill] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr-cto.md"),
+		readRepoFile("src/skills/hr-assembly/SKILL.md"),
+		readRepoFile("src/skills/hr-final-check/SKILL.md"),
+		readRepoFile("src/skills/hr-staffing/SKILL.md"),
+	]);
+
+	expect(hrCto).not.toContain("synced model catalog if present at");
+	expect(hrCto).toContain("opencode environment");
+	expect(assemblySkill).toContain("opencode environment availability probing");
+	expect(finalCheckSkill).toContain("opencode environment");
+	expect(finalCheckSkill).not.toContain("validated against synced catalog");
+	expect(staffingSkill).not.toContain("checked against `$HR_HOME/inventory/models/catalog.json`");
+	expect(staffingSkill).toContain("Model confirmation happens during staging");
+});
+
+test("HR prompt docs do not proactively ask about promote or default-profile preferences", async () => {
+	const [hrSoul, assemblySkill] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/skills/hr-assembly/SKILL.md"),
+	]);
+
+	expect(hrSoul).not.toContain("Also ask whether the promoted profile should become");
+	expect(assemblySkill).not.toContain(
+		"confirm whether the promoted profile should become the default personal profile",
+	);
+	expect(hrSoul).toContain("PROMOTE");
+	expect(hrSoul).toContain("agenthub promote");
 });
 
 test("HR hide/team-only guidance auto-adds hidden explore coverage without another user prompt", async () => {

@@ -43,8 +43,8 @@ $HR_HOME/staging/<package-id>/
 - Before final assembly, confirm whether the operator wants to keep default opencode agents such as `general`, `explore`, `plan`, and `build`. If not, the staged profile must set `"nativeAgentPolicy": "team-only"`. This suppresses host native agent merges and emits `disable: true` overrides for default opencode agents that are not supplied by the staged team itself.
 - If `nativeAgentPolicy` is `team-only` and the staged bundle set does not already provide `explore`, automatically include the built-in hidden `explore` subagent so the team retains investigation coverage without another user prompt.
 - Before final assembly, MUST verify the staged bundle set includes at least one `agent.mode: "primary"` agent that is not hidden. If all sourced candidates are subagent-style, either add/create a primary host agent or keep native agents visible. Never stage an all-subagent team as `team-only`.
-- Before final assembly, confirm whether the promoted profile should become the default personal profile for future bare `agenthub start` runs. Record that choice in `handoff.json` under `promotion_preferences.set_default_profile`.
-- If AI models are still unresolved when final assembly begins, stop and confirm the exact model choice here before writing staged agent defaults.
+- If a prior or external flow has set `promotion_preferences.set_default_profile`, preserve it in `handoff.json`. Do not proactively ask the operator about default-profile preferences during assembly.
+- If AI models are still unresolved when final assembly begins, stop and confirm the exact model choice here before writing staged agent defaults. Model confirmation must use opencode environment availability probing, not the synced inventory catalog.
 - If the operator specifies a model variant such as `xhigh`, `high`, or `thinking`, store it canonically as `agent.model: "provider/model"` plus `agent.variant: "..."`. For backward compatibility, combined strings like `"provider/model xhigh"` may still be accepted on read, but staged output should prefer the split form.
 - The package must be promotable by:
 

@@ -89,7 +89,7 @@ Each stage must produce its required deliverable before the gate. If the deliver
 | 2 | `STAFFING PLAN` | `$HR_HOME/state/staffing-plans/latest.json` and `latest.md` | `recommended:` `alternatives:` `composition:` `draft-names:` `required-skills:` `risks:` |
 | 3 | `CANDIDATE REVIEW` | Shortlist review shown to the user | Per candidate: `slug:` `fit:` `agent_class:` `deploy_role:` `gaps:` `risks:` |
 | 4 | `ARCHITECTURE REVIEW` | Final composition review | `team:` `overlaps:` `simplifications:` `default-opencode-agents:` `unresolved:` |
-| 5 | `STAGING & CONFIRMATION` | Staged package + final checklist | `package_id:` `contents:` `checklist:` `promote_cmd:` `default-profile:` `model-choice:` |
+| 5 | `STAGING & CONFIRMATION` | Staged package + final checklist | `package_id:` `contents:` `checklist:` `promote_cmd:` `model-choice:` |
 
 Always tell the user which stage you are in. Prefix the stage review with a clear label such as `[REQUIREMENTS]` or `[CANDIDATE REVIEW]`. Prefer compact stage reports over silent worker chaining.
 
@@ -142,13 +142,12 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 
 ### Stage 5 - STAGING & CONFIRMATION
 
-20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Read the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt` and validate every proposed `provider/model` name against it. If the user gives an inexact or unknown name, do not guess. Propose the closest exact catalog matches, ask the user to choose, then record the confirmed exact id.
-21. If the synced catalog is empty or missing, do not suggest exact model ids from your own knowledge. Treat model choice as blocked until the catalog is synced, or ask the user to provide an exact verified `provider/model` id.
-22. Also ask whether the promoted profile should become the default personal profile for future bare `agenthub start` runs.
-23. When model choices and default-profile preference are confirmed, delegate adaptation to `hr-adapter`.
-24. Run final readiness checks through `hr-verifier`.
-25. Present the final human checklist and require explicit approval.
-26. After approval, give the operator a structured handoff in this order:
+20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Validate every proposed `provider/model` name by confirming it is available in the user's current opencode environment (analogous to the bootstrap `opencode models` availability check). Do not reason from the synced inventory catalog. If the user gives an inexact or unknown name, do not guess. Ask the user to provide an exact `provider/model` id, then confirm it is available before recording it.
+21. If model availability cannot be confirmed (for example, the opencode environment probe is inconclusive), do not suggest exact model ids from your own knowledge. Ask the user to provide an exact verified `provider/model` id and note that availability could not be confirmed automatically.
+22. When model choices are confirmed, delegate adaptation to `hr-adapter`.
+23. Run final readiness checks through `hr-verifier`.
+24. Present the final human checklist and require explicit approval.
+25. After approval, give the operator a structured handoff in this order:
    - `BUILT` - the exact staging folder path under `$HR_HOME/staging/<package-id>/`
    - `TEST HERE` - how to run `agenthub hr <profile-name>` in the current repo to test the staged team without modifying the personal home
    - `USE ELSEWHERE` - say the same staged profile can be used in any other workspace by running `agenthub hr <profile-name>` there before promote
@@ -163,11 +162,10 @@ Before you present a staged package as ready, you must show a checklist covering
 - each candidate's agent class
 - whether each staged agent is `primary` or `subagent`
 - confirmed default model for each staged agent
-- confirmation that each model id was checked against the synced catalog, or an explicit blocker if the catalog is missing
+- confirmation that each model id was checked against the user's current opencode environment, or an explicit blocker if availability could not be confirmed
 - final agent names and promoted profile name
 - if a profile sets `defaultAgent`, confirmation that it matches the staged bundle `agent.name`
 - whether default opencode agents are kept or hidden
-- whether the promoted profile will become the default personal profile
 - whether every subagent description is clear
 - whether every skill description is clear
 - unresolved host requirements for skill assets

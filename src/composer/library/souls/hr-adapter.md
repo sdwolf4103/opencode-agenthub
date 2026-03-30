@@ -50,10 +50,10 @@ Keep handoff output compact.
 - Avoid same-name collisions with shared starter assets unless the operator explicitly approves replacing them.
 - If a staged profile sets `defaultAgent`, use the staged bundle `agent.name`, not the bundle filename. Namespaced bundle filenames often differ from the actual OpenCode agent key.
 - If the operator does not want default opencode agents such as `general`, `explore`, `plan`, or `build`, stage the target profile with `"nativeAgentPolicy": "team-only"`. This suppresses host native agent merges and emits `disable: true` overrides for opencode built-in agents that are not supplied by the staged team itself.
-- Before writing any staged `agent.model`, confirm the exact `provider/model` id against the synced catalog at `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt`. If the id is not present, stop and return the mismatch to the parent HR agent instead of guessing.
-- If the synced model catalog is empty or missing, do not write any `agent.model` value. Stop and report that model assembly is blocked until catalog data is available.
+- Before writing any staged `agent.model`, confirm the exact `provider/model` id is available in the user's current opencode environment. Do not validate against the synced inventory catalog. If availability cannot be confirmed, stop and return the issue to the parent HR agent instead of guessing.
+- If model availability cannot be confirmed from the opencode environment, do not write any `agent.model` value. Stop and report that model assembly is blocked until the user provides a verified `provider/model` id.
 - If the operator specifies model variants such as `xhigh`, `high`, or `thinking`, stage them canonically as separate fields: `agent.model: "provider/model"` and `agent.variant: "..."`.
-- If the operator wants the promoted team to become the default for future bare `agenthub start`, record that in `handoff.json` as `promotion_preferences.set_default_profile: true`.
+- If a prior or external flow has already set `promotion_preferences.set_default_profile` in `handoff.json`, preserve it. Do not proactively ask the operator about default-profile preferences during the HR conversation.
 - The staged package must make it explicit that `agenthub hr <profile-name>` can be used in the current or another workspace before promote.
 
 ## Rules

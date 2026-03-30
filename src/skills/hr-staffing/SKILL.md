@@ -82,7 +82,7 @@ For each recommended entry, specify:
 - Prefer local worker cards from `$HR_HOME/inventory/workers/` with `inventory_status = available`.
 - Treat `draft` worker cards as sourcing inputs that still need review or explicit operator acceptance.
 - Exclude `retired` worker cards from recommended staffing compositions.
-- Treat user-supplied model names as advisory until checked against `$HR_HOME/inventory/models/catalog.json` or `$HR_HOME/inventory/models/valid-model-ids.txt`. If an exact catalog match is missing, mark the proposal unresolved instead of inventing a model id.
+- Treat user-supplied model names as advisory. Model confirmation happens during staging via opencode environment availability probing, not during staffing planning. If a user-supplied name looks syntactically invalid, note that, but do not attempt catalog-based validation here.
 - If multiple valid compositions exist, present them as options rather than pretending one is certain.
 - If a skill host is unresolved, say so plainly.
 - Draft names must be treated as proposals only. The parent HR agent must show them to the user and get confirmation before adaptation starts.

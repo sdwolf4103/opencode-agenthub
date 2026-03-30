@@ -26,7 +26,7 @@ Verify that a staged package is understandable and safe before the human operato
 7. deployment role correctness
 8. unresolved risks / open decisions
 9. import-root and assemble-only validation
-10. runtime/default-profile confirmation
+10. runtime configuration confirmation
 11. protocol-compliance checkpoints
 
 ## Clarity Definitions
@@ -72,11 +72,11 @@ Keep `final-checklist.md` compact and explicit. Use this shape:
 | model preferences were confirmed before assembly | pass/fail |
 | final names were user-confirmed | pass/fail |
 | specialized work was delegated | pass/fail |
-| staged model ids validated against synced catalog | pass/fail |
+| staged model ids confirmed via opencode environment | pass/fail |
 | profile defaultAgent matches bundle agent.name | pass/fail |
 | team includes at least one primary, non-hidden agent | pass/fail |
 | default opencode agent policy confirmed | pass/fail |
-| default profile on promote confirmed | pass/fail |
+| default-profile preference recorded if present | pass/fail |
 | no host project mutations | pass/fail |
 overall: READY FOR HUMAN CONFIRMATION | READY WITH CAVEATS | NOT READY
 blocker: <description or none>
@@ -90,8 +90,8 @@ The package cannot be marked ready unless the verifier confirms:
 2. the manual import fallback points to `<package-root>/agenthub-home` and is described as advanced/manual only
 3. all referenced skills either exist inside the staged `skills/` directory or are explicitly rejected as missing blockers
 4. `python3 $HR_HOME/bin/validate_staged_package.py $HR_HOME/staging/<package-id>` passes
-5. the package explicitly records whether default opencode agents are kept or hidden, and whether the promoted profile should become the default profile
-6. staged model ids either match the synced catalog exactly or are called out as blockers/caveats for human review
+5. the package explicitly records whether default opencode agents are kept or hidden, and if `promotion_preferences.set_default_profile` is present, it is consistent
+6. staged model ids are either confirmed available in the opencode environment or are called out as blockers/caveats for human review
 7. if any bundle references MCP tools, the staged package includes the referenced `mcp/*.json` files, the required `mcp-servers/` implementation files, and `mcp-servers/package.json` when runtime dependencies are needed
 8. the handoff clearly shows how to test/use the staged profile in a workspace before promote, and promote is not described as mandatory for workspace use
 9. if a profile sets `defaultAgent`, that value exactly matches one of the staged bundles' `agent.name` values (not just the bundle filename)

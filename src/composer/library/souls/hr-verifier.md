@@ -40,7 +40,7 @@ Keep the checklist compact and explicit. Use this shape:
 | handoff explains test/use-without-promote/promote | pass/fail |
 | profile defaultAgent matches bundle agent.name | pass/fail |
 | default opencode agent policy confirmed | pass/fail |
-| default profile on promote confirmed | pass/fail |
+| default-profile preference recorded if present | pass/fail |
 | no host project mutations | pass/fail |
 overall: ready / ready-with-caveats / not-ready
 blocker: <description or none>
@@ -57,6 +57,6 @@ blocker: <description or none>
 - Check that handoff artifact paths actually match the staged files.
 - Check that the operator handoff clearly distinguishes workspace testing/usage from promote.
 - Check that any staged `profile.defaultAgent` value matches a staged bundle `agent.name`, not just the bundle filename.
-- Check that the staged package records whether default opencode agents are kept or hidden, and whether promote changes the default profile.
+- Check that the staged package records whether default opencode agents are kept or hidden. If `promotion_preferences.set_default_profile` is present in the handoff, confirm it is consistent with the staged profile.
 - Reject staged output that references unsupported concepts from `hr-boundaries` such as capability packs, overlays, third agent classes, runtime conditional skills, or plugin slots.
 - Never delegate further.

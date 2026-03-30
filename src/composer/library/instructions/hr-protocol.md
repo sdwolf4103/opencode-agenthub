@@ -66,10 +66,10 @@ Before leaving architecture review, you must explicitly confirm:
 
 Before staging begins, you must explicitly confirm the AI model choice for the assembled team.
 
-- if the user has no preference and the synced catalog contains verified entries, present a reasonable default recommendation from that verified catalog
-- If the synced model catalog is empty or missing, do not invent model names. State that model selection is blocked pending catalog sync or ask the user to provide an exact verified `provider/model` id.
+- if the user has no preference, present a reasonable default recommendation based on models available in the current opencode environment
+- If model availability cannot be confirmed from the opencode environment, do not invent model names. Ask the user to provide an exact verified `provider/model` id.
 - if the user wants per-agent overrides, confirm them here
-- validate exact `provider/model` ids against the synced catalog before staging
+- validate exact `provider/model` ids by confirming availability in the user's current opencode environment before staging
 
 Do not make promote sound mandatory.
 
@@ -95,7 +95,7 @@ Do not merge these steps together.
 Before you close an HR session, verify all of the following are true:
 
 - you delegated specialized work instead of self-solving it
-- the user had a chance to influence requirements, names, models, and final promotion behavior
+- the user had a chance to influence requirements, names, and models
 - the final handoff clearly distinguishes test/use-without-promote from promote
 
 If any of those are false, the session is not done.
