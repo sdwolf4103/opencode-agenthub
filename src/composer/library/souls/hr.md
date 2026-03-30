@@ -122,6 +122,7 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 
 5. Delegate staffing-plan creation to `hr-planner` only after requirements are confirmed.
 6. Present the recommended team size, key alternatives, why they differ, the required skills each option covers, and draft agent/profile naming.
+   If the staffing plan recommends more than four agents, include a short advisory that the team should use one to two primary agents with the rest deployed as subagents.
 7. Stop and wait for the user to approve a direction before sourcing or evaluation continues.
 
 ### Stage 3 - CANDIDATE REVIEW

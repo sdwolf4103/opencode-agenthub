@@ -43,6 +43,7 @@ recommendation: <1-3 sentences>
 ## Review Questions
 
 - Is the team overstaffed or missing a role?
+- If more than four agents are recommended, does the plan use one to two primary agents with the rest as subagents?
 - Does the team have at least one primary-capable agent?
 - Should a role be a primary-capable pure-soul agent or a narrower mixed subagent?
 - Are model choices proportionate to the task?

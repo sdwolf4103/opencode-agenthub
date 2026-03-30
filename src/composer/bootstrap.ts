@@ -54,6 +54,7 @@ const defaultHrGithubSources = [
 	"anthropics/skills",
 	"msitarzewski/agency-agents",
 	"obra/superpowers",
+	"K-Dense-AI/claude-scientific-skills",
 ];
 
 export type SyncManagedAssetsOptions = {

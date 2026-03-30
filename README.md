@@ -325,6 +325,7 @@ HR Office bootstraps with these default GitHub sources:
 - `anthropics/skills`
 - `msitarzewski/agency-agents`
 - `obra/superpowers`
+- `K-Dense-AI/claude-scientific-skills`
 
 It also bootstraps a default model catalog source:
 
@@ -340,9 +341,8 @@ The synced model inventory is written under:
 
 This gives HR an exact local list of valid `provider/model` ids during architecture review and adaptation.
 
-Two good repos to add yourself if they match your needs:
+One good repo to add yourself if it matches your needs:
 
-- `K-Dense-AI/claude-scientific-skills` - strong scientific and research-oriented skills, but more niche than the default set
 - `affaan-m/everything-claude-code` - broad practical Claude Code workflow pack if you want a larger, more opinionated source library
 
 ---

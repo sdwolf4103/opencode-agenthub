@@ -3110,6 +3110,7 @@ test("hr custom-profile bootstraps HR Office on first run before resolving profi
 		expect(hrConfig).toContain("anthropics/skills");
 		expect(hrConfig).toContain("msitarzewski/agency-agents");
 		expect(hrConfig).toContain("obra/superpowers");
+		expect(hrConfig).toContain("K-Dense-AI/claude-scientific-skills");
 		expect(hrConfig).toContain("https://models.dev/api.json");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });

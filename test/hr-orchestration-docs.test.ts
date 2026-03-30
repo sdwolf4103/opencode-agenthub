@@ -5,6 +5,18 @@ import path from "node:path";
 const readRepoFile = (relativePath: string) =>
 	readFile(path.join(process.cwd(), relativePath), "utf8");
 
+test("HR bootstrap defaults and README include K-Dense scientific skills", async () => {
+	const [bootstrap, readme] = await Promise.all([
+		readRepoFile("src/composer/bootstrap.ts"),
+		readRepoFile("README.md"),
+	]);
+
+	expect(bootstrap).toContain('"K-Dense-AI/claude-scientific-skills"');
+	expect(readme).toContain("`K-Dense-AI/claude-scientific-skills`");
+	expect(readme).toContain("One good repo to add yourself if it matches your needs:");
+	expect(readme).not.toContain("Two good repos to add yourself if they match your needs:");
+});
+
 test("HR requirements guidance focuses on use cases and defers AI model collection", async () => {
 	const [hrSoul, hrProtocol] = await Promise.all([
 		readRepoFile("src/composer/library/souls/hr.md"),
@@ -71,6 +83,21 @@ test("HR composition rules require a visible primary agent and prefer pure soul 
 	expect(hrFinalCheck).toContain("team includes at least one primary, non-hidden agent");
 	expect(hrStaffing).toContain("At least one staffing-plan entry must have `deployment_role: primary-capable`.");
 	expect(hrStaffing).toContain("prefer a pure-soul agent with attached skills over a mixed soul+skill agent");
+});
+
+test("HR large-team guidance recommends one to two primary agents with subagents", async () => {
+	const [hrSoul, hrCto, hrStaffing] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/composer/library/souls/hr-cto.md"),
+		readRepoFile("src/skills/hr-staffing/SKILL.md"),
+	]);
+
+	expect(hrStaffing).toContain("team_size_advisory");
+	expect(hrStaffing).toContain("one to two primary agents");
+	expect(hrSoul).toContain("If the staffing plan recommends more than four agents");
+	expect(hrSoul).toContain("one to two primary agents with the rest deployed as subagents");
+	expect(hrCto).toContain("If more than four agents are recommended");
+	expect(hrCto).toContain("one to two primary agents with the rest as subagents");
 });
 
 test("HR hide/team-only guidance auto-adds hidden explore coverage without another user prompt", async () => {

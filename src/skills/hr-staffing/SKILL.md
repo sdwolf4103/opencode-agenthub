@@ -39,6 +39,7 @@ Every staffing plan must include:
 - `required_tools`
 - `draft_names` (draft agent names and draft profile name for user review)
 - `risks`
+- `team_size_advisory` (included when recommended team exceeds four agents)
 - `next_action`
 
 ## Compact Summary Shape
@@ -59,6 +60,7 @@ required_skills:
 - skill: ... | why: ...
 risks:
 - ...
+team_size_advisory: <omit if ≤4 agents; otherwise: "Recommend one to two primary agents with remaining agents as subagents.">
 next_action: ...
 ```
 
@@ -75,6 +77,7 @@ For each recommended entry, specify:
 
 - At least one staffing-plan entry must have `deployment_role: primary-capable`.
 - Prefer the smallest team that can cover planning, sourcing/exploration, implementation, audit, verification, and documentation.
+- If the recommended team has more than four agents, include a `team_size_advisory` noting that the team should be structured around one to two primary agents with the remaining agents deployed as subagents. Do not recommend more than two primary-capable agents unless the user explicitly requests it.
 - When multiple candidates can cover the same seat, prefer a pure-soul agent with attached skills over a mixed soul+skill agent. Use a mixed soul+skill agent only when the specialized workflow cannot be cleanly separated, the source is tightly fused, or the user explicitly wants that mixed form.
 - Prefer local worker cards from `$HR_HOME/inventory/workers/` with `inventory_status = available`.
 - Treat `draft` worker cards as sourcing inputs that still need review or explicit operator acceptance.
