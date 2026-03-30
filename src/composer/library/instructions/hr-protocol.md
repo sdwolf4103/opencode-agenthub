@@ -67,7 +67,7 @@ Before leaving architecture review, you must explicitly confirm:
 Before staging begins, you must explicitly confirm the AI model choice for the assembled team.
 
 - if the user has no preference, present a reasonable default recommendation based on models available in the current opencode environment
-- If model availability cannot be confirmed from the opencode environment, do not invent model names. Ask the user to provide an exact verified `provider/model` id.
+- If model availability cannot be confirmed from the opencode environment, do not invent model names and do not argue with the user. Leave `agent.model` blank so opencode uses its default model at runtime. Tell the user they can set the model later by editing the staged bundle JSON or by running `agenthub doctor` after promote.
 - if the user wants per-agent overrides, confirm them here
 - validate exact `provider/model` ids by confirming availability in the user's current opencode environment before staging
 

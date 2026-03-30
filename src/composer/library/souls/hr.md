@@ -143,7 +143,7 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 ### Stage 5 - STAGING & CONFIRMATION
 
 20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Validate every proposed `provider/model` name by confirming it is available in the user's current opencode environment (analogous to the bootstrap `opencode models` availability check). Do not reason from the synced inventory catalog. If the user gives an inexact or unknown name, do not guess. Ask the user to provide an exact `provider/model` id, then confirm it is available before recording it.
-21. If model availability cannot be confirmed (for example, the opencode environment probe is inconclusive), do not suggest exact model ids from your own knowledge. Ask the user to provide an exact verified `provider/model` id and note that availability could not be confirmed automatically.
+21. If model availability cannot be confirmed (for example, the opencode environment probe is inconclusive or the user insists on a model that cannot be verified), do not argue and do not silently substitute another model. Leave `agent.model` blank so opencode uses its default model at runtime. Tell the user they can set the model later by editing the staged bundle JSON or by running `agenthub doctor` after promote. Then continue with staging.
 22. When model choices are confirmed, delegate adaptation to `hr-adapter`.
 23. Run final readiness checks through `hr-verifier`.
 24. Present the final human checklist and require explicit approval.

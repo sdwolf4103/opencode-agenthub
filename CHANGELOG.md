@@ -2,6 +2,41 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.1.3] — 2026-03-30
+
+### HR defaults and staffing guidance
+
+- add `K-Dense-AI/claude-scientific-skills` back to the default HR GitHub source set for fresh HR Office bootstraps
+- restore HR guidance that teams larger than four agents should usually favor one to two primary agents with the rest deployed as subagents
+
+### HR model confirmation and staging behavior
+
+- stop asking operators about promote/default-profile choices during HR staffing flows while preserving compatibility for older staged handoffs
+- make HR model confirmation follow the current opencode environment instead of the synced model inventory catalog
+- if a user insists on a model that cannot be verified, leave staged `agent.model` blank so opencode falls back to its default model and direct the operator to edit the staged bundle or use `agenthub doctor` later
+
+### Validation and docs
+
+- add documentation-contract coverage for the restored default source list, large-team advisory, environment-based model confirmation, and blank-model fallback guidance
+
+## [0.1.2] — 2026-03-30
+
+### HR bootstrap and onboarding
+
+- redesign first-run HR bootstrap flow so setup, intake, and staging guidance are simpler and more staged
+- simplify HR intake and first-run messaging so model choices are deferred until later review instead of front-loading them
+
+### Windows prompt resilience
+
+- harden native Windows HR bootstrap prompts against degraded readline terminal behavior and escape-sequence noise
+- sanitize degraded prompt fragments so interactive HR flows remain usable on Windows terminals
+
+### HR staging and team structure
+
+- tighten staged-team decisions and model guardrails during HR assembly
+- require at least one primary-capable agent in staged teams instead of allowing all-subagent compositions
+- auto-add hidden explore coverage when a `team-only` profile would otherwise hide all built-in exploration support
+
 ## [0.1.1] — 2026-03-29
 
 ### Bug fixes

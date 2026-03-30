@@ -138,6 +138,25 @@ test("HR prompt docs do not proactively ask about promote or default-profile pre
 	expect(hrSoul).toContain("agenthub promote");
 });
 
+test("HR model fallback docs use non-argumentative blank-model approach", async () => {
+	const [hrSoul, hrProtocol, hrAdapter] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/composer/library/instructions/hr-protocol.md"),
+		readRepoFile("src/composer/library/souls/hr-adapter.md"),
+	]);
+
+	for (const doc of [hrSoul, hrProtocol, hrAdapter]) {
+		expect(doc).not.toContain("model assembly is blocked");
+		expect(doc).not.toContain("Ask the user to provide an exact verified");
+	}
+
+	expect(hrAdapter).toContain("do not argue");
+	expect(hrAdapter).toContain("agenthub doctor");
+	expect(hrSoul).toContain("do not argue");
+	expect(hrProtocol).toContain("do not argue");
+	expect(hrProtocol).toContain("agenthub doctor");
+});
+
 test("HR hide/team-only guidance auto-adds hidden explore coverage without another user prompt", async () => {
 	const [hrSoul, hrAssembly] = await Promise.all([
 		readRepoFile("src/composer/library/souls/hr.md"),
