@@ -312,6 +312,27 @@ Typical staged-team flow:
 - If approved during HR handoff, `agenthub promote <package-id>` can also make the promoted profile your new default bare `agenthub start` profile
 - Model variants are stored separately as `model` + `variant`, not as one combined string
 
+### HR structure
+
+Inside `~/.config/opencode-agenthub-hr/` you will typically see:
+
+```text
+bin/
+inventory/
+logs/
+output/
+sources/
+staging/
+settings.json
+hr-config.json
+README.md
+```
+
+- `staging/` holds staged packages at `staging/<package-id>/agenthub-home/`
+- `inventory/` and `sources/` hold synced worker and model source data
+- `bin/` holds helper scripts used by staging and validation
+- `README.md` inside the HR home explains the layout and common commands
+
 ### Example prompts
 
 - `I want an agent that can build and verify TypeScript CLIs. Use strong public references, shortlist candidates, and stage a package for me.`
@@ -359,12 +380,25 @@ Most users do not need these on day one.
 Use this only when you install a newer package version and want to refresh built-in managed files in an existing home.
 
 ```bash
-# preview built-in file changes
+# preview Personal Home built-in file changes
 agenthub upgrade
 
-# overwrite managed built-in files
+# overwrite Personal Home managed built-in files
 agenthub upgrade --force
+
+# preview HR Office built-ins + helper scripts
+agenthub upgrade --target-root ~/.config/opencode-agenthub-hr
+
+# overwrite HR Office built-ins + helper scripts
+agenthub upgrade --target-root ~/.config/opencode-agenthub-hr --force
 ```
+
+Notes:
+
+- `agenthub upgrade` targets your Personal Home by default
+- `agenthub upgrade --target-root ~/.config/opencode-agenthub-hr` targets HR Office
+- HR upgrade refreshes built-in HR assets and helper scripts, but **never modifies** staged packages under `~/.config/opencode-agenthub-hr/staging/`
+- Continue to test staged teams with `agenthub hr <profile>` before using `agenthub promote <package-id>`
 
 ---
 

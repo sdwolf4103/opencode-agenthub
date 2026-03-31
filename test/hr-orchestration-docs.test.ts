@@ -166,3 +166,12 @@ test("HR hide/team-only guidance auto-adds hidden explore coverage without anoth
 	expect(hrSoul).toContain("If the user wants to hide native agents and no explore-like coverage exists, automatically add a hidden explore subagent");
 	expect(hrAssembly).toContain("If `nativeAgentPolicy` is `team-only` and the staged bundle set does not already provide `explore`, automatically include the built-in hidden `explore` subagent");
 });
+
+test("README documents HR upgrade flow and staging-safe behavior", async () => {
+	const readme = await readRepoFile("README.md");
+
+	expect(readme).toContain("agenthub upgrade --target-root ~/.config/opencode-agenthub-hr");
+	expect(readme).toContain("staging/");
+	expect(readme).toContain("agenthub hr <profile>");
+	expect(readme).toContain("agenthub promote <package-id>");
+});

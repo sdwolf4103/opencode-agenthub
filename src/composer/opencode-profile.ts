@@ -236,7 +236,7 @@ COMMANDS (everyday)
 COMMANDS (maintenance)
   backup         Back up My Team (personal home only)
   restore        Restore My Team from a backup bundle
-  upgrade        Preview or sync built-in managed assets
+  upgrade        Preview or sync built-in managed assets for Personal Home or HR Office
 
 COMMANDS (advanced)
   setup          Initialize the Agent Hub home directory
@@ -314,7 +314,7 @@ FLAGS (new / compose profile)
   --reserved-ok         Allow names that collide with built-in asset names
 
 FLAGS (upgrade)
-  --target-root <path>  Agent Hub home to inspect/sync
+  --target-root <path>  Agent Hub home to inspect/sync; HR Office targets auto-sync HR built-ins and helper scripts
   --dry-run             Preview managed file changes (default)
   --force               Overwrite built-in managed files
 
@@ -366,11 +366,12 @@ HR HOME
   Override with OPENCODE_AGENTHUB_HR_HOME environment variable.
   Use '${cliCommand} hr' to enter the HR Office. If HR is not installed yet, Agent Hub bootstraps it automatically.
   Use '${cliCommand} hr <profile>' to test an HR-home profile or a staged profile in a workspace before promote.
+  Use '${cliCommand} upgrade --target-root ${hrHomePath}' to refresh HR Office built-ins and helper scripts. This never changes staged packages under ${hrStagingPath}.
   HR model overrides live in ${hrSettingsPath}.
 
 NOTE
-	This package requires Node on PATH.
-	Windows users should use WSL 2 for the best experience; native Windows remains best-effort in alpha.
+  This package requires Node on PATH.
+  Windows users should use WSL 2 for the best experience; native Windows remains best-effort in alpha.
 `);
 };
 
@@ -2006,13 +2007,16 @@ const assertNameNotReserved = async (
 
 const detectSetupModeForHome = async (
 	targetRoot: string,
-): Promise<NonNullable<BootstrapOptions["mode"]>> => {
+): Promise<NonNullable<BootstrapOptions["mode"]> | "hr-office"> => {
 	const settings = await readAgentHubSettings(targetRoot);
 	const mode = settings?.meta?.onboarding?.mode;
-	if (mode === "auto" || mode === "minimal") {
+	if (mode === "auto" || mode === "minimal" || mode === "hr-office") {
 		return mode;
 	}
 	const legacyStarter = settings?.meta?.onboarding?.starter;
+	if (legacyStarter === "hr-office" || legacyStarter === "coding-hr") {
+		return "hr-office";
+	}
 	if (legacyStarter === "none" || legacyStarter === "framework") {
 		return "minimal";
 	}
@@ -2178,16 +2182,21 @@ const printHrStagedProfileResolution = async (
 
 const printUpgradeReport = (
 	targetRoot: string,
+	installMode: NonNullable<BootstrapOptions["mode"]> | "hr-office",
 	report: Awaited<ReturnType<typeof syncBuiltInAgentHubAssets>>,
 	options: ParsedArgs["upgradeOptions"],
 ) => {
 	const verb = options.dryRun ? "Would" : "Did";
 	process.stdout.write(`Built-in asset sync ${options.dryRun ? "preview" : "complete"}\n`);
 	process.stdout.write(`- target: ${targetRoot}\n`);
+	process.stdout.write(`- target kind: ${installMode === "hr-office" ? "HR Office" : "Personal Home"}\n`);
 	process.stdout.write(`- mode: ${options.dryRun ? "dry-run" : options.force ? "force" : "safe"}\n`);
 	process.stdout.write(`- add: ${report.added.length}\n`);
 	process.stdout.write(`- update: ${report.updated.length}\n`);
 	process.stdout.write(`- skip: ${report.skipped.length}\n`);
+	if (installMode === "hr-office") {
+		process.stdout.write(`- note: staged packages under ${path.join(targetRoot, "staging")} are not modified by upgrade\n`);
+	}
 	for (const [label, entries] of [
 		[`${verb} add`, report.added],
 		[`${verb} update`, report.updated],
@@ -2891,7 +2900,7 @@ if (parsed.command === "upgrade") {
 		force: parsed.upgradeOptions.force,
 		dryRun: parsed.upgradeOptions.dryRun,
 	});
-	printUpgradeReport(targetRoot, report, parsed.upgradeOptions);
+	printUpgradeReport(targetRoot, mode, report, parsed.upgradeOptions);
 	process.exit(0);
 }
 

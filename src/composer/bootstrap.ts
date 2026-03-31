@@ -527,7 +527,10 @@ export const syncBuiltInAgentHubAssets = async ({
 		await ensureAgentHubSkeleton(targetRoot);
 	}
 	const report = await syncManagedAssetSpecs(
-		getManagedCodingHrHubAssetSpecs(targetRoot, mode),
+		[
+			...getManagedCodingHrHubAssetSpecs(targetRoot, mode),
+			...getManagedHrHomeAssetSpecs(targetRoot, mode),
+		],
 		readPackageVersion(),
 		{ force, dryRun },
 	);

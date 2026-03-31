@@ -26,7 +26,7 @@ Advanced / optional layers:
 | Profile | Bundles included |
 |---|---|
 | `auto` | `auto`, `plan`, `build` |
-| `hr` | `hr`, `hr-sourcer`, `hr-evaluator`, `hr-cto`, `hr-adapter`, `hr-verifier`, `auto`, `plan`, `build` |
+| `hr` | `hr`, `hr-planner`, `hr-sourcer`, `hr-evaluator`, `hr-cto`, `hr-adapter`, `hr-verifier`, `auto`, `plan`, `build` |
 
 ## Asset model
 

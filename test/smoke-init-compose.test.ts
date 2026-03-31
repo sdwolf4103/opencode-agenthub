@@ -742,6 +742,104 @@ test("upgrade --force refreshes builtin version manifest", async () => {
 	}
 });
 
+test("upgrade --force refreshes HR Office managed assets and helper scripts", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-upgrade-force-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+
+		const hrBundlePath = path.join(hrHome, "bundles", "hr.json");
+		const helperPath = path.join(hrHome, "bin", "sync_sources.py");
+		const settingsPath = path.join(hrHome, "settings.json");
+
+		await writeFile(hrBundlePath, "tampered bundle\n", "utf8");
+		await writeFile(helperPath, "tampered script\n", "utf8");
+
+		const settings = JSON.parse(await readFile(settingsPath, "utf8"));
+		settings.meta.builtinVersion["bundles/hr.json"] = "0.0.1";
+		settings.meta.builtinVersion["hr-home/bin/sync_sources.py"] = "0.0.1";
+		await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+		const result = await runCli({
+			args: ["upgrade", "--target-root", hrHome, "--force"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Built-in asset sync complete");
+		expect(result.stdout).toContain("target kind: HR Office");
+		expect(result.stdout).toContain("staging");
+
+		const upgradedBundle = await readFile(hrBundlePath, "utf8");
+		const upgradedHelper = await readFile(helperPath, "utf8");
+		const upgradedSettings = JSON.parse(await readFile(settingsPath, "utf8"));
+
+		expect(upgradedBundle).not.toContain("tampered bundle");
+		expect(upgradedHelper).not.toContain("tampered script");
+		expect(upgradedSettings.meta.builtinVersion["bundles/hr.json"]).not.toBe("0.0.1");
+		expect(upgradedSettings.meta.builtinVersion["hr-home/bin/sync_sources.py"]).not.toBe("0.0.1");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("upgrade never modifies staged HR packages", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-upgrade-staging-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+
+		const stagedProfilePath = path.join(
+			hrHome,
+			"staging",
+			"candidate-one",
+			"agenthub-home",
+			"profiles",
+			"candidate-one.json",
+		);
+		await mkdir(path.dirname(stagedProfilePath), { recursive: true });
+		await writeFile(stagedProfilePath, '{"name":"candidate-one"}\n', "utf8");
+
+		const before = await readFile(stagedProfilePath, "utf8");
+
+		const result = await runCli({
+			args: ["upgrade", "--target-root", hrHome, "--force"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(await readFile(stagedProfilePath, "utf8")).toBe(before);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test("setup imports user native opencode overrides for managed agents", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-native-import-"));
 	const originalHome = process.env.HOME;

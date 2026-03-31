@@ -72,6 +72,8 @@ const hrHelperScripts = [
 	"validate_staged_package.py",
 ];
 
+const hrHomeFiles = ["README.md"];
+
 const listNamesByExtension = async (
 	root: string,
 	extension: string,
@@ -125,6 +127,7 @@ const manifestScopeForMode = (mode: InstallMode): string[] => {
 		return [
 			...hrLibraryFiles,
 			...hrSkillDirectories.map((name) => `skills/${name}`),
+			...hrHomeFiles.map((name) => `hr-home/${name}`),
 			...hrHelperScripts.map((name) => `hr-home/bin/${name}`),
 		];
 	}
@@ -180,11 +183,19 @@ export const getManagedHrHomeAssetSpecs = (
 	mode: InstallMode,
 ): ManagedAssetSpec[] => {
 	if (mode !== "hr-office") return [];
-	return hrHelperScripts.map((name) => ({
-		manifestKey: `hr-home/bin/${name}`,
-		source: path.join(hrSupportBinRoot, name),
-		target: path.join(hrRoot, "bin", name),
-		recursive: false,
-		executable: true,
-	}));
+	return [
+		...hrHomeFiles.map((name) => ({
+			manifestKey: `hr-home/${name}`,
+			source: path.join(builtInLibraryRoot, "hr-home", name),
+			target: path.join(hrRoot, name),
+			recursive: false,
+		})),
+		...hrHelperScripts.map((name) => ({
+			manifestKey: `hr-home/bin/${name}`,
+			source: path.join(hrSupportBinRoot, name),
+			target: path.join(hrRoot, "bin", name),
+			recursive: false,
+			executable: true,
+		})),
+	];
 };
