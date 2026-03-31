@@ -38,6 +38,12 @@ import {
 	resolvePluginConfigRoot,
 	summarizeRuntimeFeatureState,
 } from "../plugins/runtime-config.js";
+import {
+	renderComposeSummary,
+	renderRuntimeStatus,
+	renderRuntimeStatusShort,
+	resolveRuntimeStatus,
+} from "./runtime-status.js";
 import { readPackageVersion } from "./package-version.js";
 import {
 	mergeAgentHubSettingsDefaults,
@@ -84,6 +90,7 @@ type Command =
 	| "compose"
 	| "run"
 	| "start"
+	| "status"
 	| "list"
 	| "upgrade"
 	| "hub-export"
@@ -180,6 +187,10 @@ type ParsedArgs = {
 	workspace: string;
 	configRoot?: string;
 	assembleOnly: boolean;
+	statusOptions: {
+		short: boolean;
+		json: boolean;
+	};
 	opencodeArgs: string[];
 	bootstrapOptions: BootstrapOptions;
 	profileCreateOptions: {
@@ -231,6 +242,7 @@ ALIAS
 COMMANDS (everyday)
   start          Start My Team (default profile > last profile > auto)
   hr [profile]   Enter HR Office or test an HR profile in this workspace
+  status         Show the current workspace runtime, source, agents, plugins, and health hints
   promote        Promote an approved staged HR package into My Team
 
 COMMANDS (maintenance)
@@ -263,6 +275,8 @@ EXAMPLES
   ${cliCommand} hr
   ${cliCommand} hr last
   ${cliCommand} hr recruiter-team
+  ${cliCommand} status
+  ${cliCommand} status --short
   ${cliCommand} promote
   ${cliCommand} backup --output ./my-team-backup
   ${cliCommand} restore --source ./my-team-backup
@@ -307,6 +321,12 @@ FLAGS (hr)
   hr set <profile>     Unsupported (use explicit '${cliCommand} hr <profile>' each time)
   first bootstrap      HR first asks about your situation, inspects resources,
                        reports a recommendation, then lets you accept or override it
+
+FLAGS (status)
+  --workspace <path>   Inspect the runtime for a specific workspace (default: cwd)
+  --config-root <path> Inspect a specific runtime config root
+  --short              Print a compact one-block summary
+  --json               Print machine-readable runtime status
 
 FLAGS (new / compose profile)
   --from <profile>      Seed bundles/plugins from an existing profile
@@ -447,6 +467,10 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 	let workspace = process.cwd();
 	let configRoot: string | undefined;
 	let assembleOnly = false;
+	const statusOptions: ParsedArgs["statusOptions"] = {
+		short: false,
+		json: false,
+	};
 	const opencodeArgs: string[] = [];
 	const bootstrapOptions: BootstrapOptions = {};
 	const profileCreateOptions: ParsedArgs["profileCreateOptions"] = {
@@ -487,6 +511,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 		maybeCommand === "compose" ||
 		maybeCommand === "run" ||
 		maybeCommand === "start" ||
+		maybeCommand === "status" ||
 		maybeCommand === "list" ||
 		maybeCommand === "doctor" ||
 		maybeCommand === "hub-doctor"
@@ -710,6 +735,14 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 			assembleOnly = true;
 			continue;
 		}
+		if (arg === "--short") {
+			statusOptions.short = true;
+			continue;
+		}
+		if (arg === "--json") {
+			statusOptions.json = true;
+			continue;
+		}
 		if (arg === "--target-root") {
 			const resolved = path.resolve(argv[index + 1] || defaultAgentHubHome());
 			bootstrapOptions.targetRoot = resolved;
@@ -891,6 +924,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 		workspace,
 		configRoot,
 		assembleOnly,
+		statusOptions,
 		opencodeArgs,
 		bootstrapOptions,
 		profileCreateOptions,
@@ -2615,6 +2649,14 @@ const composeSelection = async (parsed: ParsedArgs, configRoot: string) => {
 	);
 };
 
+const printComposeSummaryForConfigRoot = async (
+	workspace: string,
+	configRoot: string,
+) => {
+	const status = await resolveRuntimeStatus({ workspace, configRoot });
+	process.stdout.write(renderComposeSummary(status));
+};
+
 const runOpencode = async (
 	workspace: string,
 	configRoot?: string,
@@ -2890,6 +2932,27 @@ if (parsed.command === "plugin") {
 	process.exit(0);
 }
 
+if (parsed.command === "status") {
+	const status = await resolveRuntimeStatus({
+		workspace: parsed.workspace,
+		configRoot: parsed.configRoot,
+	});
+	if (!status.exists) {
+		process.stderr.write(
+			`No Agent Hub runtime found at ${status.configRoot}.\nRun '${cliCommand} start' or '${cliCommand} hr <profile>' first.\n`,
+		);
+		process.exit(1);
+	}
+	if (parsed.statusOptions.json) {
+		process.stdout.write(`${JSON.stringify(status, null, 2)}\n`);
+	} else if (parsed.statusOptions.short) {
+		process.stdout.write(renderRuntimeStatusShort(status));
+	} else {
+		process.stdout.write(renderRuntimeStatus(status));
+	}
+	process.exit(0);
+}
+
 if (parsed.command === "upgrade") {
 	const targetRoot = resolveSelectedHomeRoot(parsed) || defaultAgentHubHome();
 	await ensureHomeReadyOrFail(targetRoot);
@@ -3157,6 +3220,10 @@ if (!(parsed.command === "hr" && suppressNextHrRuntimeBanner)) {
 suppressNextHrRuntimeBanner = false;
 if (shouldChmod()) {
 	await chmod(path.join(result.configRoot, "run.sh"), 0o755);
+}
+
+if (parsed.command === "start" || parsed.command === "run" || parsed.command === "hr") {
+	await printComposeSummaryForConfigRoot(parsed.workspace, result.configRoot);
 }
 
 if (

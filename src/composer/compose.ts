@@ -29,12 +29,14 @@ import {
 	readNativePluginEntries,
 	readWorkflowInjectionConfig,
 } from "./settings.js";
+import { readPackageVersion } from "./package-version.js";
 import {
 	generateRunCmd,
 	generateRunScript,
 	resolveHomeConfigRoot,
 	symlinkType,
 } from "./platform.js";
+import { defaultHrHome } from "./bootstrap.js";
 
 type Runtime = "native" | "omo";
 
@@ -125,6 +127,12 @@ type ComposeResult = {
 	bundles: BundleSpec[];
 };
 
+type RuntimeSourceMetadata = {
+	kind: "personal-home" | "hr-home" | "hr-staged-package";
+	label: string;
+	packageId?: string;
+};
+
 type ToolInjectionResult = {
 	workspace: string;
 	configRoot: string;
@@ -140,6 +148,8 @@ type CustomizedAgentResult = {
 };
 
 const activeRuntimeDirName = "current";
+
+const packageVersion = readPackageVersion();
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoSrcRoot = path.resolve(currentDir, "..");
@@ -247,6 +257,39 @@ const workflowInjectionMatchesBundles = (
 		return true;
 	}
 	return workflowInjection.bundles.some((bundleName) => bundleNames.includes(bundleName));
+};
+
+const resolveRuntimeSourceMetadata = (
+	libraryRoot: string,
+	settingsRoot: string,
+): RuntimeSourceMetadata => {
+	const resolvedLibraryRoot = path.resolve(libraryRoot);
+	const resolvedSettingsRoot = path.resolve(settingsRoot);
+	const resolvedHrRoot = path.resolve(defaultHrHome());
+	const stagedRoot = path.join(resolvedHrRoot, "staging");
+	const stagedPrefix = `${stagedRoot}${path.sep}`;
+
+	if (resolvedLibraryRoot.startsWith(stagedPrefix)) {
+		const relative = path.relative(stagedRoot, resolvedLibraryRoot);
+		const [packageId] = relative.split(path.sep);
+		return {
+			kind: "hr-staged-package",
+			label: packageId ? `HR staged package ${packageId}` : "HR staged package",
+			...(packageId ? { packageId } : {}),
+		};
+	}
+
+	if (resolvedLibraryRoot === resolvedHrRoot || resolvedSettingsRoot === resolvedHrRoot) {
+		return {
+			kind: "hr-home",
+			label: "HR Office",
+		};
+	}
+
+	return {
+		kind: "personal-home",
+		label: "Personal Home",
+	};
 };
 
 const resolveRuntimeInjectionConfig = ({
@@ -1038,6 +1081,9 @@ export const composeWorkspace = async (
 	const lock = {
 		profile: profile.name,
 		nativeAgentPolicy,
+		composedAt: new Date().toISOString(),
+		composedWithVersion: packageVersion,
+		source: resolveRuntimeSourceMetadata(libraryRoot, settingsRoot),
 		libraryRoot,
 		...(settingsRoot !== libraryRoot ? { settingsRoot } : {}),
 		workspace,
@@ -1089,6 +1135,8 @@ export const composeToolInjection = async (
 	};
 	const lock = {
 		mode: "tool-injection",
+		composedAt: new Date().toISOString(),
+		composedWithVersion: packageVersion,
 		libraryRoot,
 		workspace,
 		configRoot: outputRoot,
@@ -1177,6 +1225,8 @@ export const composeCustomizedAgent = async (
 	};
 	const lock = {
 		mode: "customized-agent",
+		composedAt: new Date().toISOString(),
+		composedWithVersion: packageVersion,
 		libraryRoot,
 		workspace,
 		configRoot: outputRoot,

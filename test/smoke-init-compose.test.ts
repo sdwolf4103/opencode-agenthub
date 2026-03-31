@@ -9,7 +9,11 @@ import { installAgentHubHome, installHrOfficeHome, installHrOfficeHomeWithOption
 import { buildBuiltinVersionManifest } from "../src/composer/builtin-assets.js";
 import { expandProfileAddSelections } from "../src/composer/capabilities.js";
 import { getDefaultProfilePlugins } from "../src/composer/defaults.js";
-import { composeWorkspace } from "../src/composer/compose.js";
+import {
+	composeCustomizedAgent,
+	composeToolInjection,
+	composeWorkspace,
+} from "../src/composer/compose.js";
 import {
 	displayHomeConfigPath,
 	isWindows,
@@ -4354,6 +4358,436 @@ test("composeWorkspace merges attached bundle instructions into generated agent 
 		if (originalNativeConfig === undefined) delete process.env.OPENCODE_AGENTHUB_NATIVE_CONFIG;
 		else process.env.OPENCODE_AGENTHUB_NATIVE_CONFIG = originalNativeConfig;
 
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status reports personal workspace runtime details", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-personal-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const startResult = await runCli({
+			args: ["start", "auto", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+
+		const result = await runCli({
+			args: ["status"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Agent Hub runtime status");
+		expect(result.stdout).toContain("profile: auto");
+		expect(result.stdout).toContain("source: Personal Home");
+		expect(result.stdout).toContain("default agent: auto");
+		expect(result.stdout).toContain("health:");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status --json reports staged HR runtime metadata", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-hr-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const stagedHome = path.join(
+			hrHome,
+			"staging",
+			"candidate-one",
+			"agenthub-home",
+		);
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+		await mkdir(path.join(stagedHome, "bundles"), { recursive: true });
+		await mkdir(path.join(stagedHome, "profiles"), { recursive: true });
+		await mkdir(path.join(stagedHome, "souls"), { recursive: true });
+		await writeFile(
+			path.join(stagedHome, "bundles", "coding-lead.json"),
+			`${JSON.stringify({
+				name: "coding-lead",
+				runtime: "native",
+				soul: "coding-lead",
+				skills: [],
+				agent: {
+					name: "coding-lead",
+					mode: "primary",
+					model: "team-model",
+					description: "team lead",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(stagedHome, "souls", "coding-lead.md"),
+			"# coding-lead\n",
+			"utf8",
+		);
+		await writeFile(
+			path.join(stagedHome, "profiles", "coding-team.json"),
+			`${JSON.stringify({
+				name: "coding-team",
+				bundles: ["coding-lead"],
+				defaultAgent: "coding-lead",
+				plugins: ["opencode-agenthub"],
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const composeResult = await runCli({
+			args: ["hr", "coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+			},
+		});
+		expect(composeResult.code).toBe(0);
+
+		const result = await runCli({
+			args: ["status", "--json"],
+			cwd: workspace,
+			env: {
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.profile).toBe("coding-team");
+		expect(parsed.source.kind).toBe("hr-staged-package");
+		expect(parsed.source.packageId).toBeTruthy();
+		expect(Array.isArray(parsed.plugins.effective)).toBe(true);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status --short prints compact runtime summary", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-short-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const startResult = await runCli({
+			args: ["start", "auto", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+
+		const result = await runCli({
+			args: ["status", "--short"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("auto · Personal Home");
+		expect(result.stdout).toContain("default: auto");
+		expect(result.stdout).toContain("agents:");
+		expect(result.stdout).toContain("health:");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status --workspace inspects another workspace runtime", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-workspace-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const inspector = path.join(tempRoot, "inspector");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(inspector, { recursive: true }),
+		]);
+
+		const startResult = await runCli({
+			args: ["start", "auto", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+
+		const result = await runCli({
+			args: ["status", "--workspace", workspace],
+			cwd: inspector,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain(`workspace: ${workspace}`);
+		expect(result.stdout).toContain("profile: auto");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status reports a useful error when no runtime exists", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-missing-"));
+	try {
+		const workspace = path.join(tempRoot, "workspace");
+		await mkdir(workspace, { recursive: true });
+
+		const result = await runCli({ args: ["status"], cwd: workspace });
+
+		expect(result.code).toBe(1);
+		expect(result.stderr).toContain("No Agent Hub runtime found");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("start --assemble-only prints composed runtime summary", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-start-summary-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const result = await runCli({
+			args: ["start", "auto", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Composed workspace runtime");
+		expect(result.stdout).toContain("profile: auto");
+		expect(result.stdout).toContain("source: Personal Home");
+		expect(result.stdout).toContain("default agent: auto");
+		expect(result.stdout).toContain("Run 'agenthub status' for full details.");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("hr --assemble-only prints composed runtime summary for staged profile", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-summary-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const stagedHome = path.join(
+			hrHome,
+			"staging",
+			"candidate-one",
+			"agenthub-home",
+		);
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+		await mkdir(path.join(stagedHome, "bundles"), { recursive: true });
+		await mkdir(path.join(stagedHome, "profiles"), { recursive: true });
+		await mkdir(path.join(stagedHome, "souls"), { recursive: true });
+		await writeFile(
+			path.join(stagedHome, "bundles", "coding-lead.json"),
+			`${JSON.stringify({
+				name: "coding-lead",
+				runtime: "native",
+				soul: "coding-lead",
+				skills: [],
+				agent: {
+					name: "coding-lead",
+					mode: "primary",
+					model: "team-model",
+					description: "team lead",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(stagedHome, "souls", "coding-lead.md"),
+			"# coding-lead\n",
+			"utf8",
+		);
+		await writeFile(
+			path.join(stagedHome, "profiles", "coding-team.json"),
+			`${JSON.stringify({
+				name: "coding-team",
+				bundles: ["coding-lead"],
+				defaultAgent: "coding-lead",
+				plugins: ["opencode-agenthub"],
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const result = await runCli({
+			args: ["hr", "coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Composed workspace runtime");
+		expect(result.stdout).toContain("profile: coding-team");
+		expect(result.stdout).toContain("source: HR staged package");
+		expect(result.stdout).toContain("Run 'agenthub status' for full details.");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status handles tool-injection runtimes", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-tools-only-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = personalHome;
+		await installAgentHubHome({ targetRoot: personalHome, mode: "auto" });
+		await composeToolInjection(workspace, undefined, { homeRoot: personalHome });
+
+		const result = await runCli({
+			args: ["status"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("source: Tool injection mode");
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status handles customized-agent runtimes", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-customized-"));
+	const originalHome = process.env.HOME;
+	const originalXdgHome = process.env.XDG_CONFIG_HOME;
+	const originalAgentHubHome = process.env.OPENCODE_AGENTHUB_HOME;
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = xdgHomeDir;
+		process.env.OPENCODE_AGENTHUB_HOME = personalHome;
+		await installAgentHubHome({ targetRoot: personalHome, mode: "auto" });
+		await composeCustomizedAgent(workspace, undefined, { homeRoot: personalHome });
+
+		const result = await runCli({
+			args: ["status"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("source: Customized agent mode");
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+		if (originalXdgHome === undefined) delete process.env.XDG_CONFIG_HOME;
+		else process.env.XDG_CONFIG_HOME = originalXdgHome;
+		if (originalAgentHubHome === undefined) delete process.env.OPENCODE_AGENTHUB_HOME;
+		else process.env.OPENCODE_AGENTHUB_HOME = originalAgentHubHome;
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
