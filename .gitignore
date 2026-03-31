@@ -73,3 +73,6 @@ _docs/.DS_Store
 _docs/.Rhistory
 .opencode
 .opencode-composer/
+
+# Local git worktrees
+.worktrees/
