@@ -4625,6 +4625,8 @@ test("start --assemble-only prints composed runtime summary", async () => {
 		expect(result.stdout).toContain("source: Personal Home");
 		expect(result.stdout).toContain("default agent: auto");
 		expect(result.stdout).toContain("Run 'agenthub status' for full details.");
+		expect(result.stdout).toContain("agenthub doctor --category workspace");
+		expect(result.stdout).toContain("docs/troubleshooting/compose-failures.md");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
@@ -4699,6 +4701,8 @@ test("hr --assemble-only prints composed runtime summary for staged profile", as
 		expect(result.stdout).toContain("profile: coding-team");
 		expect(result.stdout).toContain("source: HR staged package");
 		expect(result.stdout).toContain("Run 'agenthub status' for full details.");
+		expect(result.stdout).toContain("agenthub doctor --category workspace");
+		expect(result.stdout).toContain("docs/troubleshooting/compose-failures.md");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}

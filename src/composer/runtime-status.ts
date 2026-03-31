@@ -345,6 +345,8 @@ export const renderComposeSummary = (status: ResolvedRuntimeStatus): string => {
 		`- agents: ${status.agents.names.length} total (${status.agents.visible.length} visible, ${status.agents.hidden.length} hidden)`,
 		`- plugins: ${status.plugins.effective.length}`,
 		"Run 'agenthub status' for full details.",
+		"If this runtime behaves unexpectedly, run 'agenthub doctor --category workspace'.",
+		"Troubleshooting: docs/troubleshooting/compose-failures.md",
 	];
 	return `${lines.join("\n")}\n`;
 };
