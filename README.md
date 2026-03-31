@@ -215,6 +215,34 @@ If you used `setup auto`, you already have a ready-to-run default profile.
 
 ---
 
+## Runtime visibility and troubleshooting
+
+When you want to inspect the active runtime, plugin boundary state, or why something feels off, start here:
+
+```bash
+agenthub status
+agenthub status --short
+agenthub status --json
+
+agenthub doctor
+agenthub doctor --category home
+agenthub doctor --category environment
+agenthub doctor --category workspace --config-root <path>
+agenthub doctor --category plugin --config-root <path>
+```
+
+- `agenthub status` shows the current workspace runtime, profile source, visible/hidden agents, effective plugins, local plugin bridge state, OMO baseline mode, and health hints.
+- `agenthub doctor` checks home, environment, workspace, or plugin-specific issues and prints remediation plus `docs/troubleshooting/...` links when available.
+- `plugin doctor` still works as a compatibility path, but it now routes through `agenthub doctor --category=plugin`.
+
+### Boundary controls that matter
+
+- `settings.json -> localPlugins.bridge = true` keeps local filesystem plugins from `~/.config/opencode/plugins/` copied into composed runtimes. Set it to `false` if you want to disable that bridge.
+- `settings.json -> omoBaseline = "ignore"` keeps Agent Hub isolated from the global `~/.config/opencode/oh-my-opencode.json` baseline. Keep the default inherited mode if you want shared OMO categories.
+- Troubleshooting docs live under `docs/troubleshooting/` and are referenced directly by doctor output.
+
+---
+
 ## Storage layout
 
 ### Personal Home
@@ -399,6 +427,8 @@ Notes:
 - `agenthub upgrade --target-root ~/.config/opencode-agenthub-hr` targets HR Office
 - HR upgrade refreshes built-in HR assets and helper scripts, but **never modifies** staged packages under `~/.config/opencode-agenthub-hr/staging/`
 - Continue to test staged teams with `agenthub hr <profile>` before using `agenthub promote <package-id>`
+
+If a compose or runtime issue persists after upgrade, run `agenthub doctor` and follow the linked `docs/troubleshooting/...` guide for the reported category.
 
 ---
 

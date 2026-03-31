@@ -2,6 +2,25 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.1.4] — Unreleased
+
+### Runtime visibility
+
+- add runtime status visibility with `agenthub status`, including normal, short, and JSON views for composed workspace runtimes
+- surface runtime source, visible and hidden agents, effective plugins, and health hints after compose/start flows
+
+### Plugin and OMO runtime boundaries
+
+- expose plugin and OMO runtime boundaries in status and doctor output
+- add local filesystem plugin bridge visibility and `settings.json -> localPlugins.bridge` control
+- add global OMO baseline visibility and `settings.json -> omoBaseline` control
+
+### doctor troubleshooting guidance
+
+- make doctor category-aware across home, environment, workspace, and plugin scopes
+- add structured check ids, remediation text, troubleshooting doc links, and category-specific troubleshooting guides
+- complete doctor home checks through the shared registry execution path
+
 ## [0.1.3] — 2026-03-30
 
 ### HR defaults and staffing guidance
