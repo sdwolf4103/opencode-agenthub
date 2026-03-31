@@ -26,6 +26,8 @@ import {
 } from "./model-utils.js";
 
 import {
+	defaultGuardDefinitions,
+	hasConfiguredGuards,
 	loadNativeOpenCodeConfig,
 	readAgentHubSettings,
 	readNativePluginEntries,
@@ -954,7 +956,9 @@ export const composeWorkspace = async (
 	const runtimeInfo: Record<string, AgentRuntimeInfo> = {};
 
 	// Get guard registry from settings
-	const guardRegistry = settings?.guards || {};
+	const guardRegistry = hasConfiguredGuards(settings?.guards)
+		? settings.guards
+		: defaultGuardDefinitions();
 
 	// OMO MIXED PROFILE PROTECTION
 	// If profile contains OMO bundles, auto-add no_omo guard to native agents

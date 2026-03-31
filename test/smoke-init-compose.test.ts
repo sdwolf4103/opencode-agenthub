@@ -2556,9 +2556,20 @@ test("composeWorkspace explicit homeRoot falls back to built-in shared assets", 
 			"utf8",
 		);
 
-		const result = await composeWorkspace(workspace, "hr-office", undefined, {
-			homeRoot: isolatedHome,
-		});
+		const warnings: string[] = [];
+		const originalWarn = console.warn;
+		console.warn = (...args: unknown[]) => {
+			warnings.push(args.map((arg) => String(arg)).join(" "));
+		};
+
+		let result: Awaited<ReturnType<typeof composeWorkspace>>;
+		try {
+			result = await composeWorkspace(workspace, "hr-office", undefined, {
+				homeRoot: isolatedHome,
+			});
+		} finally {
+			console.warn = originalWarn;
+		}
 
 		const opencodeConfig = parseGeneratedJson(
 			await readFile(path.join(result.configRoot, "opencode.jsonc"), "utf8"),
@@ -2571,7 +2582,56 @@ test("composeWorkspace explicit homeRoot falls back to built-in shared assets", 
 		expect(Object.keys(opencodeConfig.agent)).toEqual(
 			expect.arrayContaining(["auto", "plan", "build"]),
 		);
+		expect(warnings.join("\n")).not.toContain("Guard 'no_omo' not found in registry");
+		expect(runtimeConfig.agents.auto.blockedTools).toEqual(
+			expect.arrayContaining(["call_omo_agent"]),
+		);
 		expect(runtimeConfig.workflowInjection?.enabled).toBe(true);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("composeWorkspace uses built-in guards when settings omit the guards registry", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-guard-fallback-"));
+
+	try {
+		const agentHubHome = path.join(tempRoot, "agenthub-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			installAgentHubHome({ targetRoot: agentHubHome, mode: "auto" }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const settingsPath = path.join(agentHubHome, "settings.json");
+		const settings = JSON.parse(await readFile(settingsPath, "utf8"));
+		delete settings.guards;
+		await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+		const warnings: string[] = [];
+		const originalWarn = console.warn;
+		console.warn = (...args: unknown[]) => {
+			warnings.push(args.map((arg) => String(arg)).join(" "));
+		};
+
+		let result: Awaited<ReturnType<typeof composeWorkspace>>;
+		try {
+			result = await composeWorkspace(workspace, "auto", undefined, {
+				homeRoot: agentHubHome,
+			});
+		} finally {
+			console.warn = originalWarn;
+		}
+
+		const runtimeConfig = parseGeneratedJson(
+			await readFile(path.join(result.configRoot, "agenthub-runtime.json"), "utf8"),
+		);
+
+		expect(warnings.join("\n")).not.toContain("Guard 'no_omo' not found in registry");
+		expect(runtimeConfig.agents.auto.guards).toEqual(expect.arrayContaining(["no_omo"]));
+		expect(runtimeConfig.agents.auto.blockedTools).toEqual(
+			expect.arrayContaining(["call_omo_agent"]),
+		);
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
@@ -5086,12 +5146,12 @@ test("omoBaseline ignore prevents global OMO baseline inheritance", async () => 
 	}
 });
 
-test("help mentions local plugin bridging and OMO ignore setting", async () => {
+test("full help mentions local plugin bridging and OMO ignore setting", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-phaseb-help-"));
 	try {
 		const workspace = path.join(tempRoot, "workspace");
 		await mkdir(workspace, { recursive: true });
-		const result = await runCli({ args: ["--help"], cwd: workspace });
+		const result = await runCli({ args: ["help", "--all"], cwd: workspace });
 		expect(result.code).toBe(0);
 		expect(result.stdout).toContain("Config-declared plugins already inherit automatically");
 		expect(result.stdout).toContain("Local filesystem plugins from ~/.config/opencode/plugins/");

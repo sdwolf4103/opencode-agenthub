@@ -1,44 +1,13 @@
 import path from "node:path";
 import { readdir } from "node:fs/promises";
 import { getDefaultProfilePlugins } from "../../composer/defaults.js";
-import { readAgentHubSettings, writeAgentHubSettings } from "../../composer/settings.js";
+import {
+	defaultGuardDefinitions,
+	readAgentHubSettings,
+	writeAgentHubSettings,
+} from "../../composer/settings.js";
 import type { AgentHubSettings } from "../../types.js";
 import { pathExists, readJson, writeJson } from "./checks/utils.js";
-
-/**
- * Default guard definitions
- */
-const DEFAULT_GUARDS = {
-	read_only: {
-		description: "Read-only access - no file modifications",
-		permission: {
-			edit: "deny",
-			write: "deny",
-			bash: "deny",
-		},
-	},
-	no_subagent: {
-		description: "Legacy alias for no_task",
-		blockedTools: ["task"],
-		permission: {
-			task: { "*": "deny" },
-		},
-	},
-	no_task: {
-		description: "Block task tool",
-		blockedTools: ["task"],
-		permission: {
-			task: { "*": "deny" },
-		},
-	},
-	no_omo: {
-		description: "Block OMO (Oh-My-OpenCode) multi-agent calls - for native agents in OMO profiles",
-		blockedTools: ["call_omo_agent"],
-		permission: {
-			call_omo_agent: "deny",
-		},
-	},
-};
 
 export interface FixResult {
 	success: boolean;
@@ -69,9 +38,10 @@ export async function fixMissingGuards(
 
 		// Add missing guards
 		let addedCount = 0;
+		const defaultGuards = defaultGuardDefinitions();
 		for (const guardName of guardsToAdd) {
-			if (!settings.guards[guardName] && DEFAULT_GUARDS[guardName as keyof typeof DEFAULT_GUARDS]) {
-				settings.guards[guardName] = DEFAULT_GUARDS[guardName as keyof typeof DEFAULT_GUARDS];
+			if (!settings.guards[guardName] && defaultGuards[guardName]) {
+				settings.guards[guardName] = defaultGuards[guardName];
 				addedCount++;
 			}
 		}

@@ -183,7 +183,7 @@ test("exported Agent Hub home can round-trip into equivalent runtime config", as
 	}
 });
 
-test("installAgentHubHome backfills planDetection into existing settings", async () => {
+test("installAgentHubHome backfills planDetection and default guards into existing settings", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-settings-upgrade-"));
 
 	try {
@@ -193,6 +193,7 @@ test("installAgentHubHome backfills planDetection into existing settings", async
 		const settingsPath = path.join(targetRoot, "settings.json");
 		const oldSettings = parseGeneratedJson(await readFile(settingsPath, "utf8"));
 		delete oldSettings.planDetection;
+		delete oldSettings.guards;
 		delete oldSettings.meta?.builtinVersion;
 		await writeFile(settingsPath, `${JSON.stringify(oldSettings, null, 2)}\n`, "utf8");
 
@@ -204,6 +205,15 @@ test("installAgentHubHome backfills planDetection into existing settings", async
 			queueVisibleReminder: true,
 			queueVisibleReminderTemplate: "[agenthub] Plan reminder injected for this turn.",
 		});
+		expect(Object.keys(upgradedSettings.guards || {}).sort()).toEqual(
+			expect.arrayContaining(["no_omo", "no_subagent", "no_task", "read_only"]),
+		);
+		expect(upgradedSettings.guards.no_omo).toEqual(
+			expect.objectContaining({
+				blockedTools: ["call_omo_agent"],
+				permission: { call_omo_agent: "deny" },
+			}),
+		);
 		expect(upgradedSettings.meta.builtinVersion).toEqual({
 			"bundles/auto.json": expect.any(String),
 			"bundles/explore.json": expect.any(String),

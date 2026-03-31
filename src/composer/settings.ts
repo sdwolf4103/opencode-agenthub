@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type {
 	AgentHubSettings,
+	GuardRegistry,
 	LocalPluginSettings,
 	OmoBaselineMode,
 	PlanDetectionConfig,
@@ -277,6 +278,42 @@ export const defaultLocalPluginSettings = (): LocalPluginSettings => ({
 
 export const defaultOmoBaselineMode = (): OmoBaselineMode => "inherit";
 
+export const defaultGuardDefinitions = (): GuardRegistry => ({
+	read_only: {
+		description: "Read-only access - no file modifications",
+		permission: {
+			edit: "deny",
+			write: "deny",
+			bash: "deny",
+		},
+	},
+	no_subagent: {
+		description: "Legacy alias for no_task",
+		blockedTools: ["task"],
+		permission: {
+			task: { "*": "deny" },
+		},
+	},
+	no_task: {
+		description: "Block task tool",
+		blockedTools: ["task"],
+		permission: {
+			task: { "*": "deny" },
+		},
+	},
+	no_omo: {
+		description:
+			"Block OMO (Oh-My-OpenCode) multi-agent calls - for native agents in OMO profiles",
+		blockedTools: ["call_omo_agent"],
+		permission: {
+			call_omo_agent: "deny",
+		},
+	},
+});
+
+export const hasConfiguredGuards = (guards?: GuardRegistry) =>
+	!!guards && Object.keys(guards).length > 0;
+
 export const mergeAgentHubSettingsDefaults = (
 	settings: AgentHubSettings,
 ): AgentHubSettings => ({
@@ -289,6 +326,9 @@ export const mergeAgentHubSettingsDefaults = (
 				? settings.meta.builtinVersion
 				: undefined,
 	},
+	guards: hasConfiguredGuards(settings.guards)
+		? settings.guards
+		: defaultGuardDefinitions(),
 	planDetection: settings.planDetection
 		? { ...defaultPlanDetectionSettings(), ...settings.planDetection }
 		: defaultPlanDetectionSettings(),
@@ -667,39 +707,6 @@ export const buildInitialAgentHubSettings = async ({
 		}
 	}
 
-	const guardDefinitions: NonNullable<AgentHubSettings["guards"]> = {
-		read_only: {
-			description: "Read-only access - no file modifications",
-			permission: {
-				edit: "deny",
-				write: "deny",
-				bash: "deny",
-			},
-		},
-		no_subagent: {
-			description: "Legacy alias for no_task",
-			blockedTools: ["task"],
-			permission: {
-				task: { "*": "deny" },
-			},
-		},
-		no_task: {
-			description: "Block task tool",
-			blockedTools: ["task"],
-			permission: {
-				task: { "*": "deny" },
-			},
-		},
-		no_omo: {
-			description:
-				"Block OMO (Oh-My-OpenCode) multi-agent calls - for native agents in OMO profiles",
-			blockedTools: ["call_omo_agent"],
-			permission: {
-				call_omo_agent: "deny",
-			},
-		},
-	};
-
 	const settings: AgentHubSettings = {
 		...(imported?.provider ||
 		imported?.model ||
@@ -716,7 +723,7 @@ export const buildInitialAgentHubSettings = async ({
 				}
 			: {}),
 		agents: agentOverrides,
-		guards: guardDefinitions,
+		guards: defaultGuardDefinitions(),
 		localPlugins: defaultLocalPluginSettings(),
 		omoBaseline: defaultOmoBaselineMode(),
 		planDetection: defaultPlanDetectionSettings(),
