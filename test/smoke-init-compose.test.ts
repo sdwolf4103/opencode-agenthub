@@ -4708,6 +4708,66 @@ test("hr --assemble-only prints composed runtime summary for staged profile", as
 	}
 });
 
+test("start --mode tools-only --assemble-only composes without crashing", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-tools-only-assemble-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const result = await runCli({
+			args: ["start", "--mode", "tools-only", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Composed workspace runtime");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("start --mode customized-agent --assemble-only composes without crashing", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-customized-assemble-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const result = await runCli({
+			args: ["start", "--mode", "customized-agent", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Composed workspace runtime");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test("status handles tool-injection runtimes", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-status-tools-only-"));
 	const originalHome = process.env.HOME;

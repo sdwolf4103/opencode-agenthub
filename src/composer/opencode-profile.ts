@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { chmod, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import type { BootstrapOptions } from "./bootstrap.js";
 import {
@@ -21,6 +21,7 @@ import {
 	composeToolInjection,
 	composeWorkspace,
 	getDefaultConfigRoot,
+	getWorkspaceRuntimeRoot,
 } from "./compose.js";
 import {
 	maybeConfigureEnvrc,
@@ -38,12 +39,7 @@ import {
 	createPromptInterface,
 	promptRequired,
 } from "./cli-prompts.js";
-import {
-	countConfiguredHrGithubSources,
-	countConfiguredHrModelCatalogSources,
-	ensureHrOfficeReadyOrBootstrap,
-	repairHrModelConfigurationIfNeeded,
-} from "./cli-hr-bootstrap.js";
+import { ensureHrOfficeReadyOrBootstrap, repairHrModelConfigurationIfNeeded } from "./cli-hr-bootstrap.js";
 import {
 	createBundleDefinition,
 	createInstructionDefinition,
@@ -57,11 +53,6 @@ import {
 	type SettingsImportMode,
 } from "./home-transfer.js";
 import {
-	inspectRuntimeConfig,
-	resolvePluginConfigRoot,
-	summarizeRuntimeFeatureState,
-} from "../plugins/runtime-config.js";
-import {
 	renderComposeSummary,
 	renderRuntimeStatus,
 	renderRuntimeStatusShort,
@@ -73,7 +64,6 @@ import {
 } from "./settings.js";
 import {
 	displayHomeConfigPath,
-	resolvePythonCommand,
 	shouldChmod,
 	spawnOptions,
 	windowsStartupNotice,
