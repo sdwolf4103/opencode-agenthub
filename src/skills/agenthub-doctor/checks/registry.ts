@@ -1,5 +1,86 @@
 import type { DiagnosticCheck } from "./types.js";
 import { inspectRuntimeConfig, summarizeRuntimeFeatureState } from "../../../plugins/runtime-config.js";
+import { readBinaryVersion, resolveOnPath } from "./utils.js";
+
+const environmentChecks: DiagnosticCheck[] = [
+	{
+		id: "environment/node",
+		category: "environment",
+		async run() {
+			const nodePath = await resolveOnPath("node");
+			if (!nodePath) {
+				return {
+					issues: [
+						{
+							type: "environment_check",
+							severity: "info",
+							message: "Node.js was not found on PATH.",
+							remediation: "Install Node.js or ensure it is available on PATH if your Agent Hub workflows depend on it.",
+							checkId: "environment/node",
+							autoFixable: false,
+						},
+					],
+				};
+			}
+			const version = await readBinaryVersion(nodePath);
+			return {
+				healthy: [`Node.js available: ${version || nodePath}`],
+			};
+		},
+	},
+	{
+		id: "environment/opencode",
+		category: "environment",
+		async run() {
+			const opencodePath = await resolveOnPath("opencode");
+			if (!opencodePath) {
+				return {
+					issues: [
+						{
+							type: "environment_check",
+							severity: "warning",
+							message: "opencode was not found on PATH.",
+							remediation: "Install opencode or add it to PATH so composed Agent Hub runtimes can be launched reliably.",
+							checkId: "environment/opencode",
+							autoFixable: false,
+							docLink: "docs/troubleshooting/environment-setup.md",
+						},
+					],
+				};
+			}
+			const version = await readBinaryVersion(opencodePath);
+			return {
+				healthy: [`opencode available: ${version || opencodePath}`],
+			};
+		},
+	},
+	{
+		id: "environment/python",
+		category: "environment",
+		async run() {
+			const pythonPath = (await resolveOnPath("python3")) || (await resolveOnPath("python"));
+			if (!pythonPath) {
+				return {
+					issues: [
+						{
+							type: "environment_check",
+							severity: "info",
+							message: "Python was not found on PATH.",
+							remediation: "Install python3 if you plan to use HR validation or Python-based helper workflows.",
+							checkId: "environment/python",
+							autoFixable: false,
+							docLink: "docs/troubleshooting/environment-setup.md",
+						},
+					],
+				};
+			}
+			const version = await readBinaryVersion(pythonPath, ["--version"]);
+			return {
+				healthy: [`Python available: ${version || pythonPath}`],
+			};
+		},
+	},
+];
 
 const pluginChecks: DiagnosticCheck[] = [
 	{
@@ -75,6 +156,7 @@ const workspaceChecks: DiagnosticCheck[] = [
 ];
 
 export const registeredChecks: DiagnosticCheck[] = [
+	...environmentChecks,
 	...workspaceChecks,
 	...pluginChecks,
 ];

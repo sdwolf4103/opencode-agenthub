@@ -18,7 +18,8 @@ export interface DiagnosticIssue {
 		| "local_plugins_not_bridged"
 		| "local_plugin_source_changed"
 		| "omo_baseline_active"
-		| "omo_baseline_missing";
+		| "omo_baseline_missing"
+		| "environment_check";
 	severity: "error" | "warning" | "info";
 	message: string;
 	details?: unknown;

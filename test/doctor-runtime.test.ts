@@ -171,3 +171,23 @@ test("doctor --category=workspace requires config root", async () => {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
+
+test("doctor --category=environment reports toolchain health", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-environment-category-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		await mkdir(targetRoot, { recursive: true });
+		const result = await runCli({
+			args: ["doctor", "--target-root", targetRoot, "--json", "--category", "environment"],
+			cwd: tempRoot,
+		});
+		expect(result.code).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		expect(Array.isArray(parsed.healthy)).toBe(true);
+		expect(parsed.healthy.some((item: string) => item.includes("Node.js available"))).toBe(true);
+		expect(parsed.healthy.some((item: string) => item.includes("Python available") || item.includes("opencode available"))).toBe(true);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "missing_guards")).toBe(false);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
