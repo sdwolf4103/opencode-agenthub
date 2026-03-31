@@ -5,16 +5,16 @@ import path from "node:path";
 const readRepoFile = (relativePath: string) =>
 	readFile(path.join(process.cwd(), relativePath), "utf8");
 
-test("HR bootstrap defaults and README include K-Dense scientific skills", async () => {
-	const [bootstrap, readme] = await Promise.all([
+test("HR bootstrap defaults and HR Office guide include K-Dense scientific skills", async () => {
+	const [bootstrap, hrOfficeGuide] = await Promise.all([
 		readRepoFile("src/composer/bootstrap.ts"),
-		readRepoFile("README.md"),
+		readRepoFile("docs/hr-office.md"),
 	]);
 
 	expect(bootstrap).toContain('"K-Dense-AI/claude-scientific-skills"');
-	expect(readme).toContain("`K-Dense-AI/claude-scientific-skills`");
-	expect(readme).toContain("One good repo to add yourself if it matches your needs:");
-	expect(readme).not.toContain("Two good repos to add yourself if they match your needs:");
+	expect(hrOfficeGuide).toContain("`K-Dense-AI/claude-scientific-skills`");
+	expect(hrOfficeGuide).toContain("One good repo to add yourself if it matches your needs:");
+	expect(hrOfficeGuide).not.toContain("Two good repos to add yourself if they match your needs:");
 });
 
 test("HR requirements guidance focuses on use cases and defers AI model collection", async () => {
@@ -167,13 +167,13 @@ test("HR hide/team-only guidance auto-adds hidden explore coverage without anoth
 	expect(hrAssembly).toContain("If `nativeAgentPolicy` is `team-only` and the staged bundle set does not already provide `explore`, automatically include the built-in hidden `explore` subagent");
 });
 
-test("README documents HR upgrade flow and staging-safe behavior", async () => {
-	const readme = await readRepoFile("README.md");
+test("HR Office guide documents HR upgrade flow and staging-safe behavior", async () => {
+	const hrOfficeGuide = await readRepoFile("docs/hr-office.md");
 
-	expect(readme).toContain("agenthub upgrade --target-root ~/.config/opencode-agenthub-hr");
-	expect(readme).toContain("staging/");
-	expect(readme).toContain("agenthub hr <profile>");
-	expect(readme).toContain("agenthub promote <package-id>");
+	expect(hrOfficeGuide).toContain("agenthub upgrade --target-root ~/.config/opencode-agenthub-hr");
+	expect(hrOfficeGuide).toContain("staging/");
+	expect(hrOfficeGuide).toContain("agenthub hr <profile>");
+	expect(hrOfficeGuide).toContain("agenthub promote <package-id>");
 });
 
 test("README and changelog document runtime visibility and doctor guidance", async () => {
@@ -207,4 +207,22 @@ test("README command table and doctor skill guidance match current diagnostics w
 	expect(doctorSkill).not.toContain("opencode-agenthub run");
 	expect(doctorSkill).toContain('"model": ""');
 	expect(doctorSkill).not.toContain('"model": "github-copilot/claude-sonnet-4.5"');
+});
+
+test("README keeps HR prominent but moves detailed HR operations into a dedicated guide", async () => {
+	const [readme, hrOfficeGuide] = await Promise.all([
+		readRepoFile("README.md"),
+		readRepoFile("docs/hr-office.md"),
+	]);
+
+	expect(readme).toContain("agenthub setup auto");
+	expect(readme).toContain("agenthub start");
+	expect(readme).toContain("agenthub status");
+	expect(readme).toContain("agenthub doctor");
+	expect(readme).toContain("docs/hr-office.md");
+	expect(readme).not.toContain("### HR runtime details");
+	expect(readme).not.toContain("### Default HR sources");
+	expect(hrOfficeGuide).toContain("# HR Office");
+	expect(hrOfficeGuide).toContain("## HR commands");
+	expect(hrOfficeGuide).toContain("agenthub promote <package-id>");
 });

@@ -343,14 +343,22 @@ test("help shows agenthub as primary command", async () => {
 	expect(result.stdout).toContain("opencode-agenthub <command> [options]");
 	expect(result.stdout).toContain("agenthub start");
 	expect(result.stdout).toContain("agenthub hr");
-	expect(result.stdout).toContain(`default: ${displayHomeConfigPath("opencode-agenthub")}`);
-	expect(result.stdout).toContain(displayHomeConfigPath("opencode-agenthub-hr"));
-	expect(result.stdout).toContain(
-		displayHomeConfigPath("opencode-agenthub-hr", ["settings.json"]),
-	);
-	expect(result.stdout).toContain(displayHomeConfigPath("opencode-agenthub-hr", ["staging"]));
-	expect(result.stdout).toContain("Windows users should use WSL 2");
+	expect(result.stdout).toContain("agenthub doctor");
+	expect(result.stdout).toContain("agenthub status");
+	expect(result.stdout).toContain("Run 'agenthub help <command>' for flags and examples.");
+	expect(result.stdout).not.toContain("FLAGS (hub-import)");
 	expect(result.stderr).toBe("");
+});
+
+test("help command provides detailed per-command help and full help fallback", async () => {
+	const startHelp = await runCli({ args: ["help", "start"], cwd: process.cwd(), env: {} });
+	expect(startHelp.code).toBe(0);
+	expect(startHelp.stdout).toContain("FLAGS (start / run)");
+	expect(startHelp.stdout).toContain("agenthub start last");
+
+	const fullHelp = await runCli({ args: ["help", "--all"], cwd: process.cwd(), env: {} });
+	expect(fullHelp.code).toBe(0);
+	expect(fullHelp.stdout).toContain("FLAGS (hub-import)");
 });
 
 test("setup minimal keeps optional directories lazy", async () => {

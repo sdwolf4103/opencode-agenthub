@@ -5,36 +5,14 @@
 
 > Requires Node >= 18.0.0. Supports macOS and Linux directly. Windows users should use WSL 2 for the best experience; native Windows support remains best-effort alpha.
 
-`opencode-agenthub` is a control plane and CLI for organizing, composing, and activating OpenCode agents, skills, profiles, bundles, and workspace runtime setup.
+`opencode-agenthub` is a control plane and CLI for organizing, composing, and activating OpenCode agents.
+
+Use it in two ways:
+
+- **everyday coding** — get a ready `auto / plan / build` team into each repo with `setup auto` and `start`
+- **HR Office** — source, test, and promote stronger custom teams without polluting your normal setup
 
 The npm package name is `opencode-agenthub`. The CLI command is `agenthub`. `opencode-agenthub` also works as a compatibility alias.
-
----
-
-## Do you have this problem?
-
-If any of these sound familiar, Agent Hub is for you:
-
-- your agents, prompts, and skills are scattered across random folders
-- every project needs slightly different AI behavior, but managing that by hand is messy
-- you want a clean default `plan / build / auto` setup instead of rebuilding it each time
-
-Or maybe this sounds more like you:
-
-- you want to build your own agents, but you do not want to keep adjusting your global config or global plugins every time
-- you want to build your own agents, but you do not know how to turn strong public GitHub repos into something reusable in your own setup
-- you want HR help to assemble reusable agent teams from strong public GitHub agent / skill repos without polluting your normal setup
-
-If yes, Agent Hub gives you a clear structure for building your own agent and skill library, along with an HR system that helps you assemble one.
-
----
-
-## What it gives you
-
-- one clean home for your reusable agent assets
-- one simple built-in coding setup: `auto / plan / build`
-- one per-workspace runtime, so each repo stays isolated
-- one separate HR Office when you want to source or stage external assets
 
 ---
 
@@ -75,24 +53,20 @@ Native Windows is still best-effort in alpha. Agent Hub now emits a startup noti
 
 ## Quick start
 
-For most users, this is the whole onboarding flow:
+For most solo users, this is the whole flow:
 
-### 1. Create your home
+### 1. Create your Agent Hub home
 
 ```bash
 agenthub setup auto
 ```
 
-This creates your Agent Hub home and installs the built-in `auto / plan / build` setup.
-
-### 2. Confirm or change your default provider/model
+This creates your personal Agent Hub home and installs the built-in `auto / plan / build` setup.
 
 `setup auto` imports your native opencode provider/model basics from:
 
 - `~/.config/opencode/opencode.json`
 - or `OPENCODE_AGENTHUB_NATIVE_CONFIG` if you set it
-
-That is the first place to set your default AI provider.
 
 After setup, Agent Hub also keeps the imported values in:
 
@@ -100,120 +74,83 @@ After setup, Agent Hub also keeps the imported values in:
 ~/.config/opencode-agenthub/settings.json
 ```
 
-### 3. Start working in a repo
+### 2. Start working in your repo
 
 ```bash
 agenthub start
 ```
 
-This composes your workspace runtime and launches your default team.
+This composes a workspace runtime for the current repo and launches your default team.
 
-### 4. (Optional) Call HR to assemble a customized team
+### 3. Inspect what is active
+
+```bash
+agenthub status
+```
+
+Use `status` any time you want to see which profile, agents, plugins, and runtime boundaries are active.
+
+### 4. If something feels off, diagnose it
+
+```bash
+agenthub doctor
+```
+
+`doctor` checks your environment, home, workspace runtime, or plugin setup and points you to the right troubleshooting guide.
+
+---
+
+## HR Office — recruit a better team without polluting your setup
+
+The default `auto / plan / build` team gets you moving fast. HR Office is where Agent Hub becomes a stronger product:
+
+- discover strong public agent / skill repos
+- stage a candidate team in isolation
+- test it in a real repo with `agenthub hr <profile>`
+- promote only what you want into your normal setup
+
+Start here:
 
 ```bash
 agenthub hr
 ```
 
-See details in the `HR Office` section.
+Read the full HR guide at [`docs/hr-office.md`](docs/hr-office.md).
 
 ---
 
-## Agenthub setup flow
-
-`agenthub setup auto` creates your Personal Home with built-in coding assets. `agenthub start` reads from it and composes a Workspace Runtime for the current repo.
-
-```mermaid
-graph LR
-  A["agenthub setup auto"] -->|creates| H["Personal Home<br/>~/.config/opencode-agenthub/"]
-  H -->|reads| S["agenthub start"]
-  S -->|composes| W["Workspace Runtime"]
-  W --> R["work in this repo"]
-```
-
-> **One-time:** `agenthub setup auto` - **Per-repo:** `agenthub start`
-
-## HR flow
-
-`agenthub hr` uses a separate HR Office - first launch syncs the default source repos plus the canonical model catalog into a local inventory, then HR walks through five reviewable stages: Requirements -> Staffing Plan -> Candidate Review -> Architecture Review -> Staging & Confirmation.
-
-```mermaid
-graph LR
-  SRC["Configured Repos"] -->|source| HR["agenthub hr"]
-  HR -->|opens| O["HR Office"]
-  O -->|stage| S["Candidate Teams"]
-  S -->|test| T["agenthub hr <profile><br/>current repo"]
-  S -->|approve| P["agenthub promote <package-id>"]
-  P -->|imports into| HOME["Personal Home<br/>~/.config/opencode-agenthub/"]
-```
-
-> **Isolated:** HR Office never touches your Personal Home until you explicitly run `agenthub promote <package-id>`.
-
----
-
-## Everyday start commands
-
-```bash
-agenthub start
-agenthub start last
-agenthub start <profile>
-agenthub start set <profile>
-```
-
-| Command | Effect |
-|---|---|
-| `agenthub start` | Start your current default team in this workspace |
-| `agenthub start last` | Reuse the last profile used in this workspace |
-| `agenthub start <profile>` | Start a specific profile in this workspace |
-| `agenthub start set <profile>` | Save a new personal default profile |
-
-If you want structure only and no built-in coding team yet:
-
-```bash
-agenthub setup minimal
-```
-
----
-
-## Asset model
-
-Most users only need to remember two ideas:
-
-- **bundle (agent)** = soul + agent config + optional skills / MCP / policy
-- **profile** = bundles + plugins + launch defaults
-
-### Main concepts
-
-| Concept | What it is | Why it exists |
-|---|---|---|
-| **Soul** | The base prompt / behavior for an agent | Defines how an agent thinks and speaks |
-| **Skill** | A reusable capability folder | Adds a specialized job or workflow |
-| **Bundle (agent)** | A reusable worker definition | Connects a soul to model / permissions / skills / tools |
-| **Profile** | A launchable team for one workspace | Chooses which bundles and plugins become active |
-
-### Everyday runtime parts
+## What Agent Hub creates
 
 | Part | What it does | Default location |
 |---|---|---|
-| **Personal Home** | Your reusable main library of souls, skills, bundles, profiles, and settings | `~/.config/opencode-agenthub/` |
+| **Personal Home** | Your reusable main library of teams, prompts, skills, and settings | `~/.config/opencode-agenthub/` |
 | **Workspace Runtime** | The active composed runtime for one project | `<workspace>/.opencode-agenthub/current/` |
+| **HR Office** | An isolated place to source, test, and stage stronger teams | `~/.config/opencode-agenthub-hr/` |
 
 If you used `setup auto`, you already have a ready-to-run default profile.
 
 ---
 
-## Common commands
+## Everyday commands
 
 | Command | Effect |
 |---|---|
-| `agenthub new soul reviewer` | Create a new soul scaffold |
-| `agenthub new skill repo-audit` | Create a new skill scaffold |
-| `agenthub new bundle reviewer` | Create a new bundle scaffold |
-| `agenthub new profile my-team` | Create a new profile scaffold |
-| `agenthub list` | List installed assets |
+| `agenthub setup auto` | Create your personal home with the default coding team |
+| `agenthub start` | Launch the default team in the current repo |
+| `agenthub start last` | Reuse the last profile used in this workspace |
+| `agenthub start <profile>` | Launch a specific profile in this workspace |
 | `agenthub status` | Inspect the current workspace runtime and plugin boundary state |
-| `agenthub doctor --fix-all` | Diagnose and auto-repair common home/runtime issues |
-| `agenthub backup --output ./my-team-backup` | Back up your Personal Home |
-| `agenthub restore --source ./my-team-backup` | Restore your Personal Home from a backup |
+| `agenthub doctor` | Diagnose setup/runtime issues and link to fixes |
+| `agenthub doctor --fix-all` | Apply safe automatic fixes where possible |
+| `agenthub hr` | Enter the isolated HR Office |
+| `agenthub hr <profile>` | Test an HR-home or staged HR profile in this workspace |
+| `agenthub promote <package-id>` | Import an approved staged HR package into your Personal Home |
+
+If you want a blank structure and no built-in coding team yet:
+
+```bash
+agenthub setup minimal
+```
 
 ---
 
@@ -242,6 +179,22 @@ agenthub doctor --category plugin --config-root <path>
 - `settings.json -> localPlugins.bridge = true` keeps local filesystem plugins from `~/.config/opencode/plugins/` copied into composed runtimes. Set it to `false` if you want to disable that bridge.
 - `settings.json -> omoBaseline = "ignore"` keeps Agent Hub isolated from the global `~/.config/opencode/oh-my-opencode.json` baseline. Keep the default inherited mode if you want shared OMO categories.
 - Troubleshooting docs live under `docs/troubleshooting/` and are referenced directly by doctor output.
+
+---
+
+## Two concepts to learn later
+
+Most solo users only need to remember two ideas:
+
+- **profile** = the team you activate in a repo
+- **bundle (agent)** = one configured worker inside that team
+
+If you start building custom teams, you will also see:
+
+- **Soul** — the base prompt / behavior for an agent
+- **Skill** — a reusable capability folder
+- **Instruction** — shared extra guidance you can attach to agents
+- **MCP entry** — external tool server configuration that an agent can mount
 
 ---
 
@@ -307,103 +260,21 @@ That means:
 
 ---
 
-## HR Office
+## Build your own agents and teams
 
-Use `agenthub hr` when you want a separate place to source, test, adapt, or stage external agents or skills.
-
-Default location:
-
-```text
-~/.config/opencode-agenthub-hr/
-```
-
-Override with `OPENCODE_AGENTHUB_HR_HOME`.
-
-### HR commands
+When you are ready to go beyond the default coding team:
 
 | Command | Effect |
 |---|---|
-| `agenthub hr` | Open or bootstrap the isolated HR Office |
-| `agenthub hr <profile>` | Test an HR-home or staged HR profile in the current workspace before promote |
-| `agenthub hr last` | Reuse the last HR profile tested in this workspace |
-| `agenthub promote <package-id>` | Import an approved staged HR package into your Personal Home |
-
-Typical staged-team flow:
-
-1. HR builds a package under `~/.config/opencode-agenthub-hr/staging/<package-id>/`
-2. Test it in your repo with `agenthub hr <profile>`
-3. Promote it with `agenthub promote <package-id>` once satisfied
-
-### HR runtime details
-
-- HR syncs GitHub worker sources and a model catalog into `~/.config/opencode-agenthub-hr/inventory/`
-- HR validates staged `provider/model` ids against that synced catalog instead of inventing names
-- If a staged team should hide default opencode agents like `general`, `explore`, `plan`, and `build`, HR stages the profile with `nativeAgentPolicy: "team-only"`
-- If approved during HR handoff, `agenthub promote <package-id>` can also make the promoted profile your new default bare `agenthub start` profile
-- Model variants are stored separately as `model` + `variant`, not as one combined string
-
-### HR structure
-
-Inside `~/.config/opencode-agenthub-hr/` you will typically see:
-
-```text
-bin/
-inventory/
-logs/
-output/
-sources/
-staging/
-settings.json
-hr-config.json
-README.md
-```
-
-- `staging/` holds staged packages at `staging/<package-id>/agenthub-home/`
-- `inventory/` and `sources/` hold synced worker and model source data
-- `bin/` holds helper scripts used by staging and validation
-- `README.md` inside the HR home explains the layout and common commands
-
-### Example prompts
-
-- `I want an agent that can build and verify TypeScript CLIs. Use strong public references, shortlist candidates, and stage a package for me.`
-- `I want a frontend architect agent for Next.js and a11y review. Please source references, compare them, and propose a team.`
-
-### Default HR sources
-
-HR Office bootstraps with these default GitHub sources:
-
-- `garrytan/gstack`
-- `anthropics/skills`
-- `msitarzewski/agency-agents`
-- `obra/superpowers`
-- `K-Dense-AI/claude-scientific-skills`
-
-It also bootstraps a default model catalog source:
-
-- `https://models.dev/api.json`
-
-Edit `~/.config/opencode-agenthub-hr/hr-config.json` to change either source set.
-
-The synced model inventory is written under:
-
-```text
-~/.config/opencode-agenthub-hr/inventory/models/
-```
-
-This gives HR an exact local list of valid `provider/model` ids during architecture review and adaptation.
-
-One good repo to add yourself if it matches your needs:
-
-- `affaan-m/everything-claude-code` - broad practical Claude Code workflow pack if you want a larger, more opinionated source library
+| `agenthub new soul reviewer` | Create a new soul scaffold |
+| `agenthub new skill repo-audit` | Create a new skill scaffold |
+| `agenthub new bundle reviewer` | Create a new bundle scaffold |
+| `agenthub new profile my-team` | Create a new profile scaffold |
+| `agenthub list` | List installed assets |
+| `agenthub backup --output ./my-team-backup` | Back up your Personal Home |
+| `agenthub restore --source ./my-team-backup` | Restore your Personal Home from a backup |
 
 ---
-
-## Advanced settings
-
-Most users do not need these on day one.
-
-- **Instruction** — shared extra guidance you can attach to bundles
-- **MCP entry** — external tool server configuration that a bundle can mount
 
 ## Upgrade
 
