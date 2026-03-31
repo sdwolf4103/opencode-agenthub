@@ -204,6 +204,12 @@ export type OmoSettings = {
 	defaultCategoryModel?: string;
 };
 
+export type OmoBaselineMode = "inherit" | "ignore";
+
+export type LocalPluginSettings = {
+	bridge: boolean;
+};
+
 /**
  * Extended AgentHub settings
  */
@@ -239,6 +245,12 @@ export type AgentHubSettings = {
 	
 	/** OMO-specific settings */
 	omo?: OmoSettings;
+
+	/** How Agent Hub should treat the user's global oh-my-opencode baseline */
+	omoBaseline?: OmoBaselineMode;
+
+	/** Local filesystem plugin bridge settings */
+	localPlugins?: LocalPluginSettings;
 
 	/** Cross-turn plan detection (opt-in) */
 	planDetection?: PlanDetectionConfig;

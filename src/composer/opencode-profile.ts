@@ -392,6 +392,15 @@ HR HOME
 NOTE
   This package requires Node on PATH.
   Windows users should use WSL 2 for the best experience; native Windows remains best-effort in alpha.
+
+PLUGINS
+  Config-declared plugins already inherit automatically.
+  Local filesystem plugins from ~/.config/opencode/plugins/ are copied into the runtime by default.
+  Disable with settings.json -> localPlugins.bridge = false
+
+OMO COEXISTENCE
+  Agent Hub can merge ~/.config/opencode/oh-my-opencode.json into runtime by default.
+  Disable with settings.json -> omoBaseline = "ignore"
 `);
 };
 

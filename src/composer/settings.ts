@@ -3,6 +3,9 @@ import os from "node:os";
 import path from "node:path";
 
 import type {
+	AgentHubSettings,
+	LocalPluginSettings,
+	OmoBaselineMode,
 	PlanDetectionConfig,
 	WorkflowInjectionAuthoringConfig,
 	WorkflowInjectionConfig,
@@ -268,6 +271,12 @@ export const defaultPlanDetectionSettings = (): PlanDetectionConfig => ({
 	queueVisibleReminderTemplate: "[agenthub] Plan reminder injected for this turn.",
 });
 
+export const defaultLocalPluginSettings = (): LocalPluginSettings => ({
+	bridge: true,
+});
+
+export const defaultOmoBaselineMode = (): OmoBaselineMode => "inherit";
+
 export const mergeAgentHubSettingsDefaults = (
 	settings: AgentHubSettings,
 ): AgentHubSettings => ({
@@ -283,6 +292,10 @@ export const mergeAgentHubSettingsDefaults = (
 	planDetection: settings.planDetection
 		? { ...defaultPlanDetectionSettings(), ...settings.planDetection }
 		: defaultPlanDetectionSettings(),
+	localPlugins: settings.localPlugins
+		? { ...defaultLocalPluginSettings(), ...settings.localPlugins }
+		: defaultLocalPluginSettings(),
+	omoBaseline: settings.omoBaseline ?? defaultOmoBaselineMode(),
 });
 
 export { getDefaultProfilePlugins };
@@ -704,6 +717,8 @@ export const buildInitialAgentHubSettings = async ({
 			: {}),
 		agents: agentOverrides,
 		guards: guardDefinitions,
+		localPlugins: defaultLocalPluginSettings(),
+		omoBaseline: defaultOmoBaselineMode(),
 		planDetection: defaultPlanDetectionSettings(),
 		meta: {
 			onboarding: {

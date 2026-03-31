@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import {
+	copyFile,
 	lstat,
 	mkdir,
 	readdir,
@@ -23,6 +24,7 @@ import {
 	normalizeModelSelection,
 	pickModelSelection,
 } from "./model-utils.js";
+
 import {
 	loadNativeOpenCodeConfig,
 	readAgentHubSettings,
@@ -677,12 +679,52 @@ const toGeneratedHeader = (source: string) =>
 const phaseDescription = (category: string): string =>
 	`${category} phase worker generated from workflow bundle`;
 
-const loadOmoBaseline = async (): Promise<Record<string, unknown> | null> => {
-	const baselinePath = path.join(
-		resolveHomeConfigRoot(os.homedir(), "opencode"),
-		"oh-my-opencode.json",
+const globalOpenCodeConfigRoot = () => resolveHomeConfigRoot(os.homedir(), "opencode");
+
+const globalOmoBaselinePath = () =>
+	path.join(globalOpenCodeConfigRoot(), "oh-my-opencode.json");
+
+const loadOmoBaseline = async (
+	mode: "inherit" | "ignore",
+): Promise<{ baseline: Record<string, unknown> | null; sourceFile: string | null }> => {
+	if (mode === "ignore") {
+		return { baseline: null, sourceFile: null };
+	}
+	const baselinePath = globalOmoBaselinePath();
+	const baseline = await readJsonIfExists<Record<string, unknown>>(baselinePath);
+	return { baseline, sourceFile: baseline ? baselinePath : null };
+};
+
+const bridgeLocalPlugins = async (
+	outputRoot: string,
+	bridgeEnabled: boolean,
+): Promise<{ sourceDir: string | null; bridged: string[] }> => {
+	const sourceDir = path.join(globalOpenCodeConfigRoot(), "plugins");
+	if (!bridgeEnabled) {
+		return { sourceDir: (await pathExists(sourceDir)) ? sourceDir : null, bridged: [] };
+	}
+	if (!(await pathExists(sourceDir))) {
+		return { sourceDir: null, bridged: [] };
+	}
+	const entries = await readdir(sourceDir, { withFileTypes: true });
+	const pluginFiles = entries
+		.filter(
+			(entry) =>
+				entry.isFile() && /\.(ts|js|mjs|cjs)$/i.test(entry.name),
+		)
+		.map((entry) => entry.name)
+		.sort();
+	if (pluginFiles.length === 0) {
+		return { sourceDir, bridged: [] };
+	}
+	const targetDir = path.join(outputRoot, "xdg", "opencode", "plugins");
+	await mkdir(targetDir, { recursive: true });
+	await Promise.all(
+		pluginFiles.map((name) =>
+			copyFile(path.join(sourceDir, name), path.join(targetDir, name)),
+		),
 	);
-	return readJsonIfExists<Record<string, unknown>>(baselinePath);
+	return { sourceDir, bridged: pluginFiles };
 };
 
 const writeGeneratedRuntimeFiles = async ({
@@ -1051,8 +1093,11 @@ export const composeWorkspace = async (
 		nativeAgentPolicy,
 	});
 
-	const omoBaseline =
-		Object.keys(omoCategories).length > 0 ? await loadOmoBaseline() : null;
+	const omoBaselineMode = settings?.omoBaseline ?? "inherit";
+	const { baseline: omoBaseline, sourceFile: omoBaselineSourceFile } =
+		Object.keys(omoCategories).length > 0
+			? await loadOmoBaseline(omoBaselineMode)
+			: { baseline: null, sourceFile: null };
 	const omoConfig =
 		Object.keys(omoCategories).length > 0
 			? {
@@ -1078,12 +1123,21 @@ export const composeWorkspace = async (
 		agent: agentConfig,
 	};
 
+	const localPluginBridge = await bridgeLocalPlugins(
+		outputRoot,
+		settings?.localPlugins?.bridge !== false,
+	);
 	const lock = {
 		profile: profile.name,
 		nativeAgentPolicy,
 		composedAt: new Date().toISOString(),
 		composedWithVersion: packageVersion,
 		source: resolveRuntimeSourceMetadata(libraryRoot, settingsRoot),
+		localPlugins: localPluginBridge,
+		omoBaseline: {
+			mode: omoBaselineMode,
+			sourceFile: omoBaselineSourceFile,
+		},
 		libraryRoot,
 		...(settingsRoot !== libraryRoot ? { settingsRoot } : {}),
 		workspace,
@@ -1108,6 +1162,18 @@ export const composeWorkspace = async (
 		planDetection: runtimeInjectionConfig.planDetection,
 		workflowInjection: runtimeInjectionConfig.workflowInjection,
 	});
+	if (process.stderr.isTTY) {
+		if (localPluginBridge.bridged.length > 0 && localPluginBridge.sourceDir) {
+			process.stderr.write(
+				`[agenthub] Note: ${localPluginBridge.bridged.length} local plugin${localPluginBridge.bridged.length === 1 ? "" : "s"} copied from ${localPluginBridge.sourceDir}.\n`,
+			);
+		}
+		if (omoBaselineSourceFile) {
+			process.stderr.write(
+				`[agenthub] OMO baseline merged from ${omoBaselineSourceFile}.\n`,
+			);
+		}
+	}
 
 	return { workspace, configRoot: outputRoot, profile, bundles };
 };

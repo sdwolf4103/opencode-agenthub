@@ -4791,3 +4791,231 @@ test("status handles customized-agent runtimes", async () => {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
+
+test("local plugin copy bridge copies filesystem plugins into runtime and status reports them", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-local-plugin-bridge-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const globalPluginDir = path.join(homeDir, ".config", "opencode", "plugins");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(globalPluginDir, { recursive: true }),
+		]);
+		await writeFile(
+			path.join(globalPluginDir, "rtk-local.ts"),
+			"export const LocalPlugin = async () => ({})\n",
+			"utf8",
+		);
+
+		const startResult = await runCli({
+			args: ["start", "auto", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+		const configRoot = startResult.stdout.trim().split("\n").pop();
+		if (!configRoot) throw new Error("Expected config root output from start --assemble-only");
+
+		expect(await pathExists(path.join(configRoot, "xdg", "opencode", "plugins", "rtk-local.ts"))).toBe(true);
+
+		const statusResult = await runCli({
+			args: ["status", "--json"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(statusResult.code).toBe(0);
+		const parsed = JSON.parse(statusResult.stdout);
+		expect(parsed.localPlugins.bridged).toContain("rtk-local.ts");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("status reports inherited OMO baseline source when global baseline is active", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-omo-inherit-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const globalOmoDir = path.join(homeDir, ".config", "opencode");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(globalOmoDir, { recursive: true }),
+		]);
+		await installAgentHubHome({ targetRoot: personalHome, mode: "auto" });
+		await writeFile(
+			path.join(globalOmoDir, "oh-my-opencode.json"),
+			`${JSON.stringify({ categories: { "code-review": { model: "github-copilot/gpt-5.4" } } }, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(personalHome, "bundles", "omo-review.json"),
+			`${JSON.stringify({
+				name: "omo-review",
+				runtime: "omo",
+				soul: "auto",
+				skills: [],
+				categories: {
+					"code-review": "github-copilot/claude-opus-4.6",
+				},
+				agent: {
+					name: "omo-review",
+					mode: "primary",
+					model: "github-copilot/claude-opus-4.6",
+					description: "OMO review",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(personalHome, "profiles", "omo-review.json"),
+			`${JSON.stringify({
+				name: "omo-review",
+				bundles: ["omo-review"],
+				defaultAgent: "omo-review",
+				plugins: ["opencode-agenthub"],
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const startResult = await runCli({
+			args: ["start", "omo-review", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+
+		const statusResult = await runCli({
+			args: ["status", "--json"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(statusResult.code).toBe(0);
+		const parsed = JSON.parse(statusResult.stdout);
+		expect(parsed.omoBaseline.mode).toBe("inherit");
+		expect(parsed.omoBaseline.sourceFile).toContain("oh-my-opencode.json");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("omoBaseline ignore prevents global OMO baseline inheritance", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-omo-ignore-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const workspace = path.join(tempRoot, "workspace");
+		const globalOmoDir = path.join(homeDir, ".config", "opencode");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			mkdir(globalOmoDir, { recursive: true }),
+		]);
+		await installAgentHubHome({ targetRoot: personalHome, mode: "auto" });
+		await writeFile(
+			path.join(globalOmoDir, "oh-my-opencode.json"),
+			`${JSON.stringify({ categories: { "code-review": { model: "github-copilot/gpt-5.4" } } }, null, 2)}\n`,
+			"utf8",
+		);
+		const settings = JSON.parse(await readFile(path.join(personalHome, "settings.json"), "utf8"));
+		settings.omoBaseline = "ignore";
+		await writeFile(path.join(personalHome, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+		await writeFile(
+			path.join(personalHome, "bundles", "omo-review.json"),
+			`${JSON.stringify({
+				name: "omo-review",
+				runtime: "omo",
+				soul: "auto",
+				skills: [],
+				categories: {
+					"code-review": "github-copilot/claude-opus-4.6",
+				},
+				agent: {
+					name: "omo-review",
+					mode: "primary",
+					model: "github-copilot/claude-opus-4.6",
+					description: "OMO review",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(personalHome, "profiles", "omo-review.json"),
+			`${JSON.stringify({
+				name: "omo-review",
+				bundles: ["omo-review"],
+				defaultAgent: "omo-review",
+				plugins: ["opencode-agenthub"],
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const startResult = await runCli({
+			args: ["start", "omo-review", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(startResult.code).toBe(0);
+
+		const statusResult = await runCli({
+			args: ["status", "--json"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+		expect(statusResult.code).toBe(0);
+		const parsed = JSON.parse(statusResult.stdout);
+		expect(parsed.omoBaseline.mode).toBe("ignore");
+		expect(parsed.omoBaseline.sourceFile).toBeNull();
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("help mentions local plugin bridging and OMO ignore setting", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-phaseb-help-"));
+	try {
+		const workspace = path.join(tempRoot, "workspace");
+		await mkdir(workspace, { recursive: true });
+		const result = await runCli({ args: ["--help"], cwd: workspace });
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("Config-declared plugins already inherit automatically");
+		expect(result.stdout).toContain("Local filesystem plugins from ~/.config/opencode/plugins/");
+		expect(result.stdout).toContain('omoBaseline = "ignore"');
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});

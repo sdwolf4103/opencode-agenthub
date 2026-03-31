@@ -27,7 +27,11 @@ export interface DiagnosticIssue {
 		| "no_bundles"
 		| "invalid_settings"
 		| "omo_mixed_profile"
-		| "model_invalid_syntax";
+		| "model_invalid_syntax"
+		| "local_plugins_not_bridged"
+		| "local_plugin_source_changed"
+		| "omo_baseline_active"
+		| "omo_baseline_missing";
 	severity: "error" | "warning" | "info";
 	message: string;
 	details?: unknown;
@@ -153,6 +157,15 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 
 	for (const issue of diagnoseInvalidModelSyntax(settings)) {
 		report.issues.push(issue);
+	}
+
+	for (const issue of await diagnoseLocalPluginBridge(targetRoot, settings)) {
+		report.issues.push(issue);
+	}
+
+	const omoBaselineIssue = await diagnoseOmoBaseline(settings);
+	if (omoBaselineIssue) {
+		report.issues.push(omoBaselineIssue);
 	}
 
 	return report;
@@ -353,4 +366,66 @@ async function diagnoseOmoMixedProfile(
 	}
 
 	return null;
+}
+
+async function diagnoseLocalPluginBridge(
+	targetRoot: string,
+	settings: Awaited<ReturnType<typeof readAgentHubSettings>>,
+): Promise<DiagnosticIssue[]> {
+	const issues: DiagnosticIssue[] = [];
+	const homeDir = process.env.HOME || "";
+	const sourceDir = homeDir
+		? path.join(homeDir, ".config", "opencode", "plugins")
+		: "";
+	if (!sourceDir || !(await pathExists(sourceDir))) return issues;
+	const entries = await readdir(sourceDir, { withFileTypes: true });
+	const sourcePlugins = entries
+		.filter((entry) => entry.isFile() && /\.(ts|js|mjs|cjs)$/i.test(entry.name))
+		.map((entry) => entry.name)
+		.sort();
+	if (sourcePlugins.length === 0) return issues;
+	if (settings?.localPlugins?.bridge === false) {
+		issues.push({
+			type: "local_plugins_not_bridged",
+			severity: "info",
+			message: `Local plugins exist in ${sourceDir} but bridge is disabled. Set localPlugins.bridge = true to copy them into the runtime.`,
+			details: { sourceDir, plugins: sourcePlugins },
+		});
+		return issues;
+	}
+	issues.push({
+		type: "local_plugin_source_changed",
+		severity: "info",
+		message: `Local plugin bridge is enabled. Re-compose workspaces after changing plugins in ${sourceDir}.`,
+		details: { sourceDir, plugins: sourcePlugins },
+	});
+	return issues;
+}
+
+async function diagnoseOmoBaseline(
+	settings: Awaited<ReturnType<typeof readAgentHubSettings>>,
+): Promise<DiagnosticIssue | null> {
+	const homeDir = process.env.HOME || "";
+	const baselinePath = homeDir
+		? path.join(homeDir, ".config", "opencode", "oh-my-opencode.json")
+		: "";
+	if (settings?.omoBaseline === "ignore") {
+		return null;
+	}
+	if (baselinePath && (await pathExists(baselinePath))) {
+		return {
+			type: "omo_baseline_active",
+			severity: "info",
+			message: `Global OMO baseline is active from ${baselinePath}. Set omoBaseline = "ignore" in settings.json to isolate Agent Hub runtime from it.`,
+			details: { baselinePath },
+		};
+	}
+	if (!settings?.omo?.defaultCategoryModel) {
+		return null;
+	}
+	return {
+		type: "omo_baseline_missing",
+		severity: "info",
+		message: "OMO baseline mode is inherit, but no global oh-my-opencode.json was found.",
+	};
 }

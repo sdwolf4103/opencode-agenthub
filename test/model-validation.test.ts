@@ -144,3 +144,83 @@ test("validateHrAgentModelConfiguration does not fail valid models when availabi
 		await rm(hrRoot, { recursive: true, force: true });
 	}
 });
+
+test("diagnostics report active global OMO baseline and disabled local plugin bridge", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-phaseb-diagnostics-"));
+	const originalHome = process.env.HOME;
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		const globalOmoDir = path.join(homeDir, ".config", "opencode");
+		const globalPluginDir = path.join(globalOmoDir, "plugins");
+		await Promise.all([
+			mkdir(path.join(targetRoot, "profiles"), { recursive: true }),
+			mkdir(path.join(targetRoot, "bundles"), { recursive: true }),
+			mkdir(path.join(targetRoot, "souls"), { recursive: true }),
+			mkdir(globalPluginDir, { recursive: true }),
+		]);
+		process.env.HOME = homeDir;
+
+		await writeAgentHubSettings(targetRoot, {
+			localPlugins: { bridge: false },
+			omoBaseline: "inherit",
+			guards: {
+				read_only: { description: "ro" },
+				no_task: { description: "nt" },
+				no_omo: { description: "no omo" },
+			},
+			meta: {
+				onboarding: {
+					mode: "auto",
+					importedNativeBasics: true,
+					importedNativeAgents: true,
+					createdAt: new Date().toISOString(),
+				},
+			},
+		});
+		await writeFile(
+			path.join(globalOmoDir, "oh-my-opencode.json"),
+			`${JSON.stringify({ categories: { review: { model: "github-copilot/gpt-5.4" } } }, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(globalPluginDir, "sample.ts"),
+			"export const Sample = async () => ({})\n",
+			"utf8",
+		);
+		await writeFile(path.join(targetRoot, "souls", "auto.md"), "# auto\n", "utf8");
+		await writeFile(
+			path.join(targetRoot, "bundles", "auto.json"),
+			`${JSON.stringify({
+				name: "auto",
+				runtime: "native",
+				soul: "auto",
+				skills: [],
+				agent: {
+					name: "auto",
+					mode: "primary",
+					model: "github-copilot/gpt-5.4",
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(targetRoot, "profiles", "auto.json"),
+			`${JSON.stringify({
+				name: "auto",
+				bundles: ["auto"],
+				defaultAgent: "auto",
+				plugins: ["opencode-agenthub"],
+			}, null, 2)}\n`,
+			"utf8",
+		);
+
+		const report = await runDiagnostics(targetRoot);
+		expect(report.issues.some((issue) => issue.type === "local_plugins_not_bridged")).toBe(true);
+		expect(report.issues.some((issue) => issue.type === "omo_baseline_active")).toBe(true);
+	} finally {
+		if (originalHome === undefined) delete process.env.HOME;
+		else process.env.HOME = originalHome;
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});

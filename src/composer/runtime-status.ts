@@ -45,6 +45,14 @@ export type ResolvedRuntimeStatus = {
 	plugins: {
 		effective: string[];
 	};
+	localPlugins: {
+		sourceDir: string | null;
+		bridged: string[];
+	};
+	omoBaseline: {
+		mode: "inherit" | "ignore";
+		sourceFile: string | null;
+	};
 	health: RuntimeHealth;
 };
 
@@ -199,6 +207,8 @@ export const resolveRuntimeStatus = async ({
 			bundles: [],
 			agents: { names: [], visible: [], hidden: [] },
 			plugins: { effective: [] },
+			localPlugins: { sourceDir: null, bridged: [] },
+			omoBaseline: { mode: "inherit", sourceFile: null },
 			health: { staleRuntime: false, issues: ["missing runtime"], label: "runtime missing" },
 		};
 	}
@@ -229,6 +239,14 @@ export const resolveRuntimeStatus = async ({
 	const plugins = Array.isArray(opencodeConfig?.plugin)
 		? (opencodeConfig.plugin as unknown[]).filter((entry): entry is string => typeof entry === "string")
 		: [];
+	const localPluginsRaw =
+		lock?.localPlugins && typeof lock.localPlugins === "object"
+			? (lock.localPlugins as Record<string, unknown>)
+			: {};
+	const omoBaselineRaw =
+		lock?.omoBaseline && typeof lock.omoBaseline === "object"
+			? (lock.omoBaseline as Record<string, unknown>)
+			: {};
 
 	return {
 		workspace:
@@ -245,6 +263,24 @@ export const resolveRuntimeStatus = async ({
 		agents,
 		plugins: {
 			effective: plugins,
+		},
+		localPlugins: {
+			sourceDir:
+				typeof localPluginsRaw.sourceDir === "string"
+					? (localPluginsRaw.sourceDir as string)
+					: null,
+			bridged: Array.isArray(localPluginsRaw.bridged)
+				? (localPluginsRaw.bridged as unknown[]).filter(
+					(entry): entry is string => typeof entry === "string",
+				)
+				: [],
+		},
+		omoBaseline: {
+			mode: omoBaselineRaw.mode === "ignore" ? "ignore" : "inherit",
+			sourceFile:
+				typeof omoBaselineRaw.sourceFile === "string"
+					? (omoBaselineRaw.sourceFile as string)
+					: null,
 		},
 		health: toHealth(composedWithVersion),
 	};
@@ -267,6 +303,22 @@ export const renderRuntimeStatus = (status: ResolvedRuntimeStatus): string => {
 	lines.push(
 		`- plugins: ${status.plugins.effective.length > 0 ? status.plugins.effective.join(", ") : "(none)"}`,
 	);
+	if (status.localPlugins.bridged.length > 0) {
+		lines.push(
+			`- local plugins: ${status.localPlugins.bridged.length} copied (${status.localPlugins.bridged.join(", ")})`,
+		);
+	} else if (status.localPlugins.sourceDir) {
+		lines.push(`- local plugins: bridge disabled or none copied (${status.localPlugins.sourceDir})`);
+	} else {
+		lines.push(`- local plugins: (none)`);
+	}
+	if (status.omoBaseline.mode === "ignore") {
+		lines.push(`- omo baseline: ignored (per settings)`);
+	} else if (status.omoBaseline.sourceFile) {
+		lines.push(`- omo baseline: inherited from ${status.omoBaseline.sourceFile}`);
+	} else {
+		lines.push(`- omo baseline: inherit (no global file found)`);
+	}
 	lines.push(`- health: ${status.health.label}`);
 	return `${lines.join("\n")}\n`;
 };
@@ -278,6 +330,7 @@ export const renderRuntimeStatusShort = (status: ResolvedRuntimeStatus): string 
 		`default: ${status.defaultAgent || "(none)"}`,
 		`agents: ${status.agents.names.length} total (${status.agents.visible.length} visible, ${status.agents.hidden.length} hidden)`,
 		`plugins: ${status.plugins.effective.length}`,
+		`local plugins: ${status.localPlugins.bridged.length}`,
 		`health: ${status.health.label}`,
 	];
 	return `${lines.join("\n")}\n`;
