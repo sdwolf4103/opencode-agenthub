@@ -3038,6 +3038,7 @@ if (parsed.command === "doctor" || parsed.command === "hub-doctor") {
 	const report = await runDiagnostics(targetRoot, {
 		configRoot: parsed.configRoot,
 		workspace: parsed.workspace,
+		category: parsed.doctorOptions.category,
 	});
 	const strictMode = parsed.doctorOptions.strict === true;
 	const renderCompactVerdict = () => {
@@ -3161,6 +3162,7 @@ if (parsed.command === "doctor" || parsed.command === "hub-doctor") {
 		const rerun = await runDiagnostics(targetRoot, {
 			configRoot: parsed.configRoot,
 			workspace: parsed.workspace,
+			category: parsed.doctorOptions.category,
 		});
 		process.stdout.write(
 			rerun.issues.length === 0

@@ -135,3 +135,39 @@ test("plugin doctor warns about deprecation and routes through doctor", async ()
 		await rm(tempRoot, { recursive: true, force: true });
 	}
 });
+
+test("doctor --category=plugin only runs plugin/runtime diagnostics", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-plugin-category-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		const configRoot = path.join(tempRoot, "missing-config");
+		await mkdir(targetRoot, { recursive: true });
+		const result = await runCli({
+			args: ["doctor", "--target-root", targetRoot, "--config-root", configRoot, "--json", "--category", "plugin"],
+			cwd: tempRoot,
+		});
+		expect(result.code).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "plugin/runtime-config")).toBe(true);
+		expect(parsed.issues.some((issue: { type?: string }) => issue.type === "missing_guards")).toBe(false);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("doctor --category=workspace requires config root", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-workspace-category-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		await mkdir(targetRoot, { recursive: true });
+		const result = await runCli({
+			args: ["doctor", "--target-root", targetRoot, "--json", "--category", "workspace"],
+			cwd: tempRoot,
+		});
+		expect(result.code).toBe(1);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "workspace/runtime-root")).toBe(true);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});

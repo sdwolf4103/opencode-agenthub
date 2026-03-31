@@ -3,6 +3,7 @@ import path from "node:path";
 import { readAgentHubSettings } from "../../composer/settings.js";
 import { validateModelIdentifier } from "../../composer/model-utils.js";
 import { pathExists, readJson } from "./checks/utils.js";
+import { checksForCategory } from "./checks/registry.js";
 
 export interface DiagnosticIssue {
 	type:
@@ -62,7 +63,11 @@ const computeVerdict = (issues: DiagnosticIssue[]): "pass" | "warn" | "fail" => 
 
 export async function runDiagnostics(
 	targetRoot: string,
-	options?: { configRoot?: string; workspace?: string },
+	options?: {
+		configRoot?: string;
+		workspace?: string;
+		category?: "environment" | "home" | "workspace" | "plugin";
+	},
 ): Promise<DiagnosticReport> {
 	const report: DiagnosticReport = {
 		healthy: [],
@@ -75,9 +80,12 @@ export async function runDiagnostics(
 		},
 	};
 
+	const requestedCategory = options?.category;
+	const runHomeChecks = !requestedCategory || requestedCategory === "home";
+
 	// Check settings.json exists
 	const settingsPath = path.join(targetRoot, "settings.json");
-	if (!(await pathExists(settingsPath))) {
+	if (runHomeChecks && !(await pathExists(settingsPath))) {
 		report.issues.push(withIssueDefaults({
 			type: "invalid_settings",
 			severity: "error",
@@ -88,11 +96,13 @@ export async function runDiagnostics(
 		report.verdict = computeVerdict(report.issues);
 		return report; // Cannot continue without settings
 	}
-	report.healthy.push("Settings file exists");
+	if (runHomeChecks) {
+		report.healthy.push("Settings file exists");
+	}
 
 	// Load settings
 	const settings = await readAgentHubSettings(targetRoot);
-	if (!settings) {
+	if (runHomeChecks && !settings) {
 		report.issues.push(withIssueDefaults({
 			type: "invalid_settings",
 			severity: "error",
@@ -103,97 +113,111 @@ export async function runDiagnostics(
 		return report;
 	}
 
-	// Check for missing guards
-	const missingGuards = await diagnoseMissingGuards(settings);
-	if (missingGuards.length > 0) {
-		report.issues.push(withIssueDefaults({
-			type: "missing_guards",
-			severity: "warning",
-			message: `Missing guards: ${missingGuards.join(", ")}`,
-			details: { guards: missingGuards },
-			remediation: "Run 'agenthub doctor --fix-all' to recreate the required guard definitions.",
-			autoFixable: true,
-			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
-		}));
-	} else {
-		report.healthy.push("All required guards present");
+	if (runHomeChecks) {
+		const missingGuards = await diagnoseMissingGuards(settings);
+		if (missingGuards.length > 0) {
+			report.issues.push(withIssueDefaults({
+				type: "missing_guards",
+				severity: "warning",
+				message: `Missing guards: ${missingGuards.join(", ")}`,
+				details: { guards: missingGuards },
+				remediation: "Run 'agenthub doctor --fix-all' to recreate the required guard definitions.",
+				autoFixable: true,
+				docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+			}));
+		} else {
+			report.healthy.push("All required guards present");
+		}
+
+		const orphanedSouls = await diagnoseOrphanedSouls(targetRoot);
+		if (orphanedSouls.length > 0) {
+			report.issues.push(withIssueDefaults({
+				type: "orphaned_souls",
+				severity: "warning",
+				message: `${orphanedSouls.length} souls not referenced by any bundle`,
+				details: { souls: orphanedSouls },
+				remediation: "Create bundles for these souls or remove the unused soul files. 'agenthub doctor --fix-all' can create bundles automatically.",
+				autoFixable: true,
+				docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+			}));
+		} else {
+			report.healthy.push("All souls have bundles");
+		}
+
+		const orphanedSkills = await diagnoseOrphanedSkills(targetRoot);
+		if (orphanedSkills.length > 0) {
+			report.issues.push(withIssueDefaults({
+				type: "orphaned_skills",
+				severity: "info",
+				message: `${orphanedSkills.length} skills not referenced by any bundle`,
+				details: { skills: orphanedSkills },
+				remediation: "Attach the skills to a bundle or remove them if they are no longer needed.",
+				docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+			}));
+		}
+
+		const profilesExist = await diagnoseProfiles(targetRoot);
+		if (!profilesExist) {
+			report.issues.push(withIssueDefaults({
+				type: "no_profiles",
+				severity: "error",
+				message: "No profiles found - cannot run agents",
+				remediation: "Create a profile or import one from another Agent Hub home. 'agenthub doctor --fix-all' can create a starter profile if bundles exist.",
+				autoFixable: true,
+				docLink: "docs/troubleshooting/compose-failures.md",
+			}));
+		} else {
+			report.healthy.push("Profiles exist");
+		}
+
+		const bundlesExist = await diagnoseBundles(targetRoot);
+		if (!bundlesExist) {
+			report.issues.push(withIssueDefaults({
+				type: "no_bundles",
+				severity: "error",
+				message: "No bundles found - cannot compose agents",
+				remediation: "Create or import at least one bundle before composing profiles.",
+				docLink: "docs/troubleshooting/compose-failures.md",
+			}));
+		} else {
+			report.healthy.push("Bundles exist");
+		}
+
+		const omoIssue = await diagnoseOmoMixedProfile(targetRoot);
+		if (omoIssue) {
+			report.issues.push(withIssueDefaults(omoIssue));
+		}
+
+		for (const issue of diagnoseInvalidModelSyntax(settings)) {
+			report.issues.push(withIssueDefaults(issue));
+		}
+
+		for (const issue of await diagnoseLocalPluginBridge(targetRoot, settings)) {
+			report.issues.push(withIssueDefaults(issue));
+		}
+
+		const omoBaselineIssue = await diagnoseOmoBaseline(settings);
+		if (omoBaselineIssue) {
+			report.issues.push(withIssueDefaults(omoBaselineIssue));
+		}
 	}
 
-	// Check for orphaned souls
-	const orphanedSouls = await diagnoseOrphanedSouls(targetRoot);
-	if (orphanedSouls.length > 0) {
-		report.issues.push(withIssueDefaults({
-			type: "orphaned_souls",
-			severity: "warning",
-			message: `${orphanedSouls.length} souls not referenced by any bundle`,
-			details: { souls: orphanedSouls },
-			remediation: "Create bundles for these souls or remove the unused soul files. 'agenthub doctor --fix-all' can create bundles automatically.",
-			autoFixable: true,
-			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
-		}));
-	} else {
-		report.healthy.push("All souls have bundles");
-	}
-
-	// Check for orphaned skills
-	const orphanedSkills = await diagnoseOrphanedSkills(targetRoot);
-	if (orphanedSkills.length > 0) {
-		report.issues.push(withIssueDefaults({
-			type: "orphaned_skills",
-			severity: "info",
-			message: `${orphanedSkills.length} skills not referenced by any bundle`,
-			details: { skills: orphanedSkills },
-			remediation: "Attach the skills to a bundle or remove them if they are no longer needed.",
-			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
-		}));
-	}
-
-	// Check for profiles
-	const profilesExist = await diagnoseProfiles(targetRoot);
-	if (!profilesExist) {
-		report.issues.push(withIssueDefaults({
-			type: "no_profiles",
-			severity: "error",
-			message: "No profiles found - cannot run agents",
-			remediation: "Create a profile or import one from another Agent Hub home. 'agenthub doctor --fix-all' can create a starter profile if bundles exist.",
-			autoFixable: true,
-			docLink: "docs/troubleshooting/compose-failures.md",
-		}));
-	} else {
-		report.healthy.push("Profiles exist");
-	}
-
-	// Check for bundles
-	const bundlesExist = await diagnoseBundles(targetRoot);
-	if (!bundlesExist) {
-		report.issues.push(withIssueDefaults({
-			type: "no_bundles",
-			severity: "error",
-			message: "No bundles found - cannot compose agents",
-			remediation: "Create or import at least one bundle before composing profiles.",
-			docLink: "docs/troubleshooting/compose-failures.md",
-		}));
-	} else {
-		report.healthy.push("Bundles exist");
-	}
-
-	// Check for OMO mixed profile issues
-	const omoIssue = await diagnoseOmoMixedProfile(targetRoot);
-	if (omoIssue) {
-		report.issues.push(withIssueDefaults(omoIssue));
-	}
-
-	for (const issue of diagnoseInvalidModelSyntax(settings)) {
-		report.issues.push(withIssueDefaults(issue));
-	}
-
-	for (const issue of await diagnoseLocalPluginBridge(targetRoot, settings)) {
-		report.issues.push(withIssueDefaults(issue));
-	}
-
-	const omoBaselineIssue = await diagnoseOmoBaseline(settings);
-	if (omoBaselineIssue) {
-		report.issues.push(withIssueDefaults(omoBaselineIssue));
+	if (requestedCategory) {
+		for (const check of checksForCategory(requestedCategory)) {
+			const result = await check.run({
+				targetRoot,
+				configRoot: options?.configRoot,
+				workspace: options?.workspace,
+				category: requestedCategory,
+				settings,
+			});
+			for (const healthyItem of result.healthy || []) {
+				report.healthy.push(healthyItem);
+			}
+			for (const issue of result.issues || []) {
+				report.issues.push(withIssueDefaults(issue));
+			}
+		}
 	}
 
 	report.verdict = computeVerdict(report.issues);
