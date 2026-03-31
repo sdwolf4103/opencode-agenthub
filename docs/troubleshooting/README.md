@@ -8,4 +8,4 @@ Use the focused guides in this directory when `agenthub doctor`, compose, or run
 - `guard-and-skill-conflicts.md` — missing guards, mixed OMO/native profiles, or inherited OMO baseline issues
 - `model-configuration.md` — invalid `provider/model` syntax in overrides
 
-For OMO mixed-profile warnings, use `guard-and-skill-conflicts.md`; that guide intentionally replaces a separate `omo-mixed-profile.md` page.
+For OMO mixed-profile warnings, use `guard-and-skill-conflicts.md`.

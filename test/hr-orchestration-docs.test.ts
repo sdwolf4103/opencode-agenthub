@@ -192,3 +192,19 @@ test("README and changelog document runtime visibility and doctor guidance", asy
 	expect(changelog).toContain("plugin and OMO runtime boundaries");
 	expect(changelog).toContain("doctor troubleshooting guidance");
 });
+
+test("README command table and doctor skill guidance match current diagnostics workflow", async () => {
+	const [readme, troubleshootingIndex, doctorSkill] = await Promise.all([
+		readRepoFile("README.md"),
+		readRepoFile("docs/troubleshooting/README.md"),
+		readRepoFile("src/skills/agenthub-doctor/SKILL.md"),
+	]);
+
+	expect(readme).toContain("| `agenthub status` |");
+	expect(readme).toContain("| `agenthub doctor --fix-all` |");
+	expect(troubleshootingIndex).not.toContain("intentionally replaces a separate");
+	expect(doctorSkill).toContain("agenthub start");
+	expect(doctorSkill).not.toContain("opencode-agenthub run");
+	expect(doctorSkill).toContain('"model": ""');
+	expect(doctorSkill).not.toContain('"model": "github-copilot/claude-sonnet-4.5"');
+});

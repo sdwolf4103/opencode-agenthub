@@ -210,6 +210,8 @@ If you used `setup auto`, you already have a ready-to-run default profile.
 | `agenthub new bundle reviewer` | Create a new bundle scaffold |
 | `agenthub new profile my-team` | Create a new profile scaffold |
 | `agenthub list` | List installed assets |
+| `agenthub status` | Inspect the current workspace runtime and plugin boundary state |
+| `agenthub doctor --fix-all` | Diagnose and auto-repair common home/runtime issues |
 | `agenthub backup --output ./my-team-backup` | Back up your Personal Home |
 | `agenthub restore --source ./my-team-backup` | Restore your Personal Home from a backup |
 

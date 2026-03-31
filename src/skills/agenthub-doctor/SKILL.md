@@ -84,7 +84,7 @@ You are an Agent Hub diagnostic and assembly agent. Your job is to:
     │                         │
     │ Next steps:             │
     │  cd /your/project       │
-    │  opencode-agenthub run  │
+│  agenthub start         │
     └─────────────────────────┘
 ```
 
@@ -162,7 +162,7 @@ Run diagnostics again to confirm all issues resolved:
 
 Next steps:
   cd /your/project
-  opencode-agenthub run imported
+  agenthub start imported
 ```
 
 ## Guard Definitions
@@ -203,7 +203,7 @@ When creating bundles for orphaned souls:
   "agent": {
     "name": "<soul-name>",
     "mode": "primary",
-    "model": "github-copilot/claude-sonnet-4.5",
+    "model": "",
     "description": "Auto-generated bundle for imported soul"
   }
 }
