@@ -46,6 +46,15 @@ const cliEntry = path.join(process.cwd(), "src", "composer", "opencode-profile.t
 const windows = isWindows();
 const pythonCommand = resolvePythonCommand(windows);
 
+const withPortableHomeEnv = (env?: Record<string, string | undefined>) => {
+	if (!env) return env;
+	if (!windows || !env.HOME || env.USERPROFILE) return env;
+	return {
+		...env,
+		USERPROFILE: env.HOME,
+	};
+};
+
 const hasCommandOnPath = (command: string) => {
 	const extensions = windows ? ["", ".exe", ".cmd", ".bat"] : [""];
 	for (const rawDir of (process.env.PATH || "").split(path.delimiter)) {
@@ -145,7 +154,7 @@ const runCli = async ({
 		env: {
 			...process.env,
 			...(scriptedAnswers ? { OPENCODE_AGENTHUB_SCRIPTED_ANSWERS: scriptedAnswers } : {}),
-			...env,
+			...withPortableHomeEnv(env),
 		},
 		stdio: ["pipe", "pipe", "pipe"],
 	});
@@ -180,7 +189,7 @@ const runOpencode = async ({
 	const child = spawn("opencode", args, {
 		...spawnOptions(windows),
 		cwd,
-		env: { ...process.env, ...env },
+		env: { ...process.env, ...withPortableHomeEnv(env) },
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 
