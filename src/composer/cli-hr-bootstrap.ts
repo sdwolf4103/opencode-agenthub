@@ -160,17 +160,8 @@ export const printHrBootstrapAssessment = (
 	resources: HrBootstrapResourceAssessment,
 	recommendation: HrBootstrapRecommendation,
 ) => {
-	process.stdout.write("\nDetected resources:\n");
-	process.stdout.write(
-		`- ${formatCountLabel(resources.configuredGithubSources, "GitHub repo")}\n`,
-	);
-	process.stdout.write(
-		`- ${formatCountLabel(resources.configuredModelCatalogSources, "model catalog")}\n`,
-	);
-	if (resources.nativeModel) {
-		process.stdout.write(`- native default model: ${resources.nativeModel}\n`);
-	}
-	process.stdout.write(`\nRecommended setup:\n${recommendation.summary}\n${recommendation.reason}\n\n`);
+	void resources;
+	process.stdout.write(`\nRecommended setup:\n${recommendation.summary}\n\n`);
 };
 
 export const buildHrModelSelection = async (
