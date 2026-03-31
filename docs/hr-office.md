@@ -2,7 +2,7 @@
 
 HR Office is Agent Hub's isolated place for discovering, testing, and promoting stronger custom teams.
 
-Use it when you want to work with public agent / skill repos, shortlist candidates, stage a package, and only then import the result into your normal setup.
+Use it when you want to tell Agent Hub, in plain English, what kind of team you want, explore strong public agent / skill repos, and only then import the result into your normal setup.
 
 > **Isolated by default:** HR Office never touches your Personal Home until you explicitly run `agenthub promote <package-id>`.
 
@@ -11,6 +11,11 @@ Use it when you want to work with public agent / skill repos, shortlist candidat
 ```bash
 agenthub hr
 ```
+
+Example asks:
+
+- `I want an agent that can build and verify TypeScript CLIs. Use strong public references, shortlist candidates, and stage a package for me.`
+- `I want a frontend architect agent for Next.js and a11y review. Please source references, compare them, and propose a team.`
 
 Default location:
 
@@ -71,11 +76,6 @@ README.md
 - `inventory/` and `sources/` hold synced worker and model source data
 - `bin/` holds helper scripts used by staging and validation
 - `README.md` inside the HR home explains the layout and common commands
-
-## Example prompts
-
-- `I want an agent that can build and verify TypeScript CLIs. Use strong public references, shortlist candidates, and stage a package for me.`
-- `I want a frontend architect agent for Next.js and a11y review. Please source references, compare them, and propose a team.`
 
 ## Default HR sources
 

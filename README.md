@@ -5,12 +5,12 @@
 
 > Requires Node >= 18.0.0. Supports macOS and Linux directly. Windows users should use WSL 2 for the best experience; native Windows support remains best-effort alpha.
 
-`opencode-agenthub` is a control plane and CLI for organizing, composing, and activating OpenCode agents.
+`opencode-agenthub` puts a ready AI coding team into each repo you work in, and gives you an isolated way to build stronger teams from public agent libraries.
 
 Use it in two ways:
 
 - **everyday coding** — get a ready `auto / plan / build` team into each repo with `setup auto` and `start`
-- **HR Office** — source, test, and promote stronger custom teams without polluting your normal setup
+- **HR Office** — source, test, and promote stronger custom teams without touching your normal setup until you are ready
 
 The npm package name is `opencode-agenthub`. The CLI command is `agenthub`. `opencode-agenthub` also works as a compatibility alias.
 
@@ -63,16 +63,7 @@ agenthub setup auto
 
 This creates your personal Agent Hub home and installs the built-in `auto / plan / build` setup.
 
-`setup auto` imports your native opencode provider/model basics from:
-
-- `~/.config/opencode/opencode.json`
-- or `OPENCODE_AGENTHUB_NATIVE_CONFIG` if you set it
-
-After setup, Agent Hub also keeps the imported values in:
-
-```text
-~/.config/opencode-agenthub/settings.json
-```
+It also imports your existing opencode provider/model basics. If something looks wrong, `agenthub doctor` will tell you what to fix.
 
 ### 2. Start working in your repo
 
@@ -100,7 +91,7 @@ agenthub doctor
 
 ---
 
-## HR Office — recruit a better team without polluting your setup
+## HR Office — recruit a better team without touching your normal setup
 
 The default `auto / plan / build` team gets you moving fast. HR Office is where Agent Hub becomes a stronger product:
 
@@ -128,6 +119,8 @@ Read the full HR guide at [`docs/hr-office.md`](docs/hr-office.md).
 | **HR Office** | An isolated place to source, test, and stage stronger teams | `~/.config/opencode-agenthub-hr/` |
 
 If you used `setup auto`, you already have a ready-to-run default profile.
+
+> **Terminology:** A *profile* is the team you activate in a repo. A *bundle* is one configured worker inside that team. You will encounter more concepts later only if you start building custom teams.
 
 ---
 
@@ -179,22 +172,6 @@ agenthub doctor --category plugin --config-root <path>
 - `settings.json -> localPlugins.bridge = true` keeps local filesystem plugins from `~/.config/opencode/plugins/` copied into composed runtimes. Set it to `false` if you want to disable that bridge.
 - `settings.json -> omoBaseline = "ignore"` keeps Agent Hub isolated from the global `~/.config/opencode/oh-my-opencode.json` baseline. Keep the default inherited mode if you want shared OMO categories.
 - Troubleshooting docs live under `docs/troubleshooting/` and are referenced directly by doctor output.
-
----
-
-## Two concepts to learn later
-
-Most solo users only need to remember two ideas:
-
-- **profile** = the team you activate in a repo
-- **bundle (agent)** = one configured worker inside that team
-
-If you start building custom teams, you will also see:
-
-- **Soul** — the base prompt / behavior for an agent
-- **Skill** — a reusable capability folder
-- **Instruction** — shared extra guidance you can attach to agents
-- **MCP entry** — external tool server configuration that an agent can mount
 
 ---
 
