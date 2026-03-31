@@ -2,7 +2,7 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
-## [0.1.4] — Unreleased
+## [0.1.4] — 2026-03-31
 
 ### Runtime visibility
 
