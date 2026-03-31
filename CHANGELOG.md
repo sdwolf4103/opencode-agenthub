@@ -2,6 +2,24 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.1.5] — 2026-03-31
+
+### Onboarding clarity and help
+
+- clarify the primary `setup` / `start` / `status` / `doctor` onboarding flow across the README and CLI help surfaces
+- add dedicated `docs/hr-office.md` and `docs/runtime-reference.md` guides so everyday usage stays concise while detailed HR/runtime behavior stays documented
+
+### Built-in HR showcase demo
+
+- ship a built-in `demo-coding-team` staged package so new HR Office users can immediately run `agenthub hr demo-coding-team`
+- preserve a real seven-role team shape and public-repo provenance while vendoring a lightweight skill subset that stays runnable without heavyweight browser or Python helper dependencies
+- support promoting the built-in demo into Personal Home with `agenthub promote demo-coding-team`, including showcase seeding/backfill and end-to-end CLI coverage
+
+### Runtime safety and validation
+
+- restore built-in guard fallbacks so default guards still compose correctly when settings omit explicit guard entries
+- add regression coverage for showcase seeding, lightweight skill vendoring, demo promotion, and advisory-model metadata alignment
+
 ## [0.1.4] — 2026-03-31
 
 ### Runtime visibility
