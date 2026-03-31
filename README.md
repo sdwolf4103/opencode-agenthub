@@ -5,7 +5,7 @@
 
 > Requires Node >= 18.0.0. Supports macOS and Linux directly. Windows users should use WSL 2 for the best experience; native Windows support remains best-effort alpha.
 
-`opencode-agenthub` puts a ready AI coding team into each repo you work in, and gives you an isolated way to build stronger teams from public agent libraries.
+`opencode-agenthub` puts a ready AI coding team into each repo you work in — and when you want a better one, its HR Office helps you assemble custom teams from strong public agent repos, test them safely, and adopt only what you trust.
 
 Use it in two ways:
 
@@ -71,7 +71,9 @@ It also imports your existing opencode provider/model basics. If something looks
 agenthub start
 ```
 
-This composes a workspace runtime for the current repo and launches your default team.
+This activates your default coding team in the current repo.
+
+After that, you can keep using plain `opencode` inside the folder for day-to-day work.
 
 ### 3. Inspect what is active
 
@@ -107,22 +109,6 @@ agenthub hr
 ```
 
 Read the full HR guide at [`docs/hr-office.md`](docs/hr-office.md).
-
----
-
-## What Agent Hub creates
-
-| Part | What it does | Default location |
-|---|---|---|
-| **Personal Home** | Your reusable main library of teams, prompts, skills, and settings | `~/.config/opencode-agenthub/` |
-| **Workspace Runtime** | The active composed runtime for one project | `<workspace>/.opencode-agenthub/current/` |
-| **HR Office** | An isolated place to source, test, and stage stronger teams | `~/.config/opencode-agenthub-hr/` |
-
-If you used `setup auto`, you already have a ready-to-run default profile.
-
-> **Terminology:** A *profile* is the team you activate in a repo. A *bundle* is one configured worker inside that team. You will encounter more concepts later only if you start building custom teams.
-
----
 
 ## Everyday commands
 
@@ -163,15 +149,41 @@ agenthub doctor --category workspace --config-root <path>
 agenthub doctor --category plugin --config-root <path>
 ```
 
-- `agenthub status` shows the current workspace runtime, profile source, visible/hidden agents, effective plugins, local plugin bridge state, OMO baseline mode, and health hints.
-- `agenthub doctor` checks home, environment, workspace, or plugin-specific issues and prints remediation plus `docs/troubleshooting/...` links when available.
+- `agenthub status` shows your active team, agents, plugins, and any health warnings.
+- `agenthub doctor` checks your setup and tells you exactly what to fix.
 - `plugin doctor` still works as a compatibility path, but it now routes through `agenthub doctor --category=plugin`.
 
-### Boundary controls that matter
+For plugin bridge, OMO baseline, runtime boundary controls, and troubleshooting links, see [`docs/runtime-reference.md`](docs/runtime-reference.md).
 
-- `settings.json -> localPlugins.bridge = true` keeps local filesystem plugins from `~/.config/opencode/plugins/` copied into composed runtimes. Set it to `false` if you want to disable that bridge.
-- `settings.json -> omoBaseline = "ignore"` keeps Agent Hub isolated from the global `~/.config/opencode/oh-my-opencode.json` baseline. Keep the default inherited mode if you want shared OMO categories.
-- Troubleshooting docs live under `docs/troubleshooting/` and are referenced directly by doctor output.
+---
+
+## Build your own agents and teams
+
+When you are ready to go beyond the default coding team:
+
+| Command | Effect |
+|---|---|
+| `agenthub new soul reviewer` | Create a new soul scaffold |
+| `agenthub new skill repo-audit` | Create a new skill scaffold |
+| `agenthub new bundle reviewer` | Create a new bundle scaffold |
+| `agenthub new profile my-team` | Create a new profile scaffold |
+| `agenthub list` | List installed assets |
+| `agenthub backup --output ./my-team-backup` | Back up your Personal Home |
+| `agenthub restore --source ./my-team-backup` | Restore your Personal Home from a backup |
+
+---
+
+## What Agent Hub creates
+
+| Part | What it does | Default location |
+|---|---|---|
+| **Personal Home** | Your reusable main library of teams, prompts, skills, and settings | `~/.config/opencode-agenthub/` |
+| **Workspace Runtime** | The active composed runtime for one project | `<workspace>/.opencode-agenthub/current/` |
+| **HR Office** | An isolated place to source, test, and stage stronger teams | `~/.config/opencode-agenthub-hr/` |
+
+If you used `setup auto`, you already have a ready-to-run default profile.
+
+> **Terminology:** A *profile* is a team. A *bundle* is one agent in that team. You only need these two terms until you start building custom teams.
 
 ---
 
@@ -222,36 +234,6 @@ That file stores things like:
 - last-used `start` profile in this workspace
 - last-used `hr` test profile in this workspace
 - `.envrc` preference state
-
----
-
-## How plain `opencode` fits in
-
-When you start a profile in a workspace, Agent Hub can offer to generate `.envrc` so plain `opencode` works there without retyping `agenthub` every time.
-
-That means:
-
-- use `agenthub start ...` when you want to switch your normal workspace runtime
-- use `agenthub hr <profile>` when you want to test an HR profile in a workspace
-- then use plain `opencode` for day-to-day work inside that folder
-
----
-
-## Build your own agents and teams
-
-When you are ready to go beyond the default coding team:
-
-| Command | Effect |
-|---|---|
-| `agenthub new soul reviewer` | Create a new soul scaffold |
-| `agenthub new skill repo-audit` | Create a new skill scaffold |
-| `agenthub new bundle reviewer` | Create a new bundle scaffold |
-| `agenthub new profile my-team` | Create a new profile scaffold |
-| `agenthub list` | List installed assets |
-| `agenthub backup --output ./my-team-backup` | Back up your Personal Home |
-| `agenthub restore --source ./my-team-backup` | Restore your Personal Home from a backup |
-
----
 
 ## Upgrade
 

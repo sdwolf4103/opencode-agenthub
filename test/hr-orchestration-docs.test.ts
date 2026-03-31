@@ -176,18 +176,22 @@ test("HR Office guide documents HR upgrade flow and staging-safe behavior", asyn
 	expect(hrOfficeGuide).toContain("agenthub promote <package-id>");
 });
 
-test("README and changelog document runtime visibility and doctor guidance", async () => {
-	const [readme, changelog] = await Promise.all([
+test("README and runtime reference document runtime visibility and doctor guidance", async () => {
+	const [readme, runtimeReference, changelog] = await Promise.all([
 		readRepoFile("README.md"),
+		readRepoFile("docs/runtime-reference.md"),
 		readRepoFile("CHANGELOG.md"),
 	]);
 
 	expect(readme).toContain("agenthub status");
 	expect(readme).toContain("agenthub doctor");
 	expect(readme).toContain("doctor --category");
-	expect(readme).toContain("localPlugins.bridge");
-	expect(readme).toContain("omoBaseline");
-	expect(readme).toContain("docs/troubleshooting/");
+	expect(readme).toContain("docs/runtime-reference.md");
+	expect(readme).not.toContain("localPlugins.bridge");
+	expect(readme).not.toContain("omoBaseline");
+	expect(runtimeReference).toContain("localPlugins.bridge");
+	expect(runtimeReference).toContain("omoBaseline");
+	expect(runtimeReference).toContain("docs/troubleshooting/");
 	expect(changelog).toContain("runtime status visibility");
 	expect(changelog).toContain("plugin and OMO runtime boundaries");
 	expect(changelog).toContain("doctor troubleshooting guidance");
@@ -222,7 +226,7 @@ test("README keeps HR prominent but moves detailed HR operations into a dedicate
 	expect(readme).toContain("docs/hr-office.md");
 	expect(readme).not.toContain("control plane and CLI");
 	expect(readme).not.toContain("## Two concepts to learn later");
-	expect(readme).toContain("A *profile* is the team you activate in a repo");
+	expect(readme).toContain("A *profile* is a team");
 	expect(readme).not.toContain("### HR runtime details");
 	expect(readme).not.toContain("### Default HR sources");
 	expect(hrOfficeGuide).toContain("# HR Office");

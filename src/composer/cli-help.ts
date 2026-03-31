@@ -185,7 +185,7 @@ OMO COEXISTENCE
 `;
 };
 
-const compactHelpText = `${cliCommand} — put a clear AI coding team into each repo
+const compactHelpText = `${cliCommand} — put a ready AI coding team into each repo
 
 USAGE
   ${cliCommand} <command> [options]
