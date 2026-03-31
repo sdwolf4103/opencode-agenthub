@@ -1,0 +1,26 @@
+{
+  "name": "demo-coding-team-frontend-consultant",
+  "runtime": "native",
+  "soul": "demo-coding-team-frontend-consultant",
+  "skills": [
+    "anthropics-skills-skills-frontend-design-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "frontend-consultant",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/gpt-5.4",
+    "variant": "xhigh",
+    "description": "Frontend and web-flow consultant for Next.js and plugin UI work.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "agency-agents Frontend Developer",
+    "advisory_model": "github-copilot/gpt-5.4 xhigh"
+  }
+}

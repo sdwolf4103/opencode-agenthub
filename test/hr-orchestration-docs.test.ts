@@ -233,3 +233,31 @@ test("README keeps HR prominent but moves detailed HR operations into a dedicate
 	expect(hrOfficeGuide).toContain("## HR commands");
 	expect(hrOfficeGuide).toContain("agenthub promote <package-id>");
 });
+
+test("README and HR Office guide present a runnable showcase HR team", async () => {
+	const [readme, hrOfficeGuide, hrHomeReadme] = await Promise.all([
+		readRepoFile("README.md"),
+		readRepoFile("docs/hr-office.md"),
+		readRepoFile("src/composer/library/hr-home/README.md"),
+	]);
+
+	expect(readme).toContain("agenthub hr demo-coding-team");
+	expect(readme).toContain("demo-coding-team");
+	expect(readme).toContain("agency-agents");
+	expect(readme).toContain("obra/superpowers");
+	expect(readme).toContain("lightweight vendored skill subset");
+	expect(readme).toContain("anthropics/skills");
+	expect(readme).toContain("agenthub promote demo-coding-team");
+	expect(readme).toContain("promote the same demo into your Personal Home");
+	expect(readme).not.toContain("garrytan/gstack");
+	expect(hrOfficeGuide).toContain("## Try the demo team");
+	expect(hrOfficeGuide).toContain("agenthub hr demo-coding-team");
+	expect(hrOfficeGuide).toContain("agenthub promote demo-coding-team");
+	expect(hrOfficeGuide).toContain("agency-agents");
+	expect(hrOfficeGuide).toContain("obra/superpowers");
+	expect(hrOfficeGuide).toContain("anthropics/skills");
+	expect(hrOfficeGuide).toContain("lightweight vendored skill subset");
+	expect(hrOfficeGuide).toContain("Try it in a repo, inspect it, then promote it");
+	expect(hrHomeReadme).toContain("demo-coding-team");
+	expect(hrHomeReadme).toContain("promote it with 'agenthub promote demo-coding-team'");
+});

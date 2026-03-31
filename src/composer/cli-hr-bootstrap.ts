@@ -7,6 +7,8 @@ import {
 	defaultHrHome,
 	hrHomeInitialized,
 	installHrOfficeHomeWithOptions,
+	seedHrShowcasePackageIfMissing,
+	hrShowcasePackageId,
 } from "./bootstrap.js";
 import {
 	createPromptInterface,
@@ -519,7 +521,10 @@ export const ensureHrOfficeReadyOrBootstrap = async (
 	targetRoot = defaultHrHome(),
 	options: { syncSourcesOnFirstRun?: boolean; cliCommand: string } = { cliCommand: "agenthub" },
 ): Promise<boolean> => {
-	if (await hrHomeInitialized(targetRoot)) return false;
+	if (await hrHomeInitialized(targetRoot)) {
+		await seedHrShowcasePackageIfMissing(targetRoot);
+		return false;
+	}
 	const shouldPrompt = shouldUseInteractivePrompts();
 	process.stdout.write("\nHR Office — first-time setup\n\n");
 	process.stdout.write(
@@ -542,6 +547,10 @@ export const ensureHrOfficeReadyOrBootstrap = async (
 	if (options.syncSourcesOnFirstRun ?? true) {
 		await syncHrSourceInventoryOnFirstRun(targetRoot);
 	}
+	process.stdout.write("\nA demo team is staged and ready to test:\n");
+	process.stdout.write(`  ${options.cliCommand} hr ${hrShowcasePackageId}\n`);
+	process.stdout.write(`  ${options.cliCommand} promote ${hrShowcasePackageId}\n`);
+	process.stdout.write("It preserves the real team shape, real sourced skills, and public-repo provenance so you can inspect what a strong HR result looks like.\n");
 	process.stdout.write("\n✓ HR Office is ready.\n");
 	return true;
 };

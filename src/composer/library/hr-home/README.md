@@ -31,6 +31,15 @@ Test an HR-home or staged profile in any workspace before promote:
 agenthub hr <profile>
 ```
 
+Built-in demo example:
+
+```bash
+agenthub hr demo-coding-team
+agenthub promote demo-coding-team
+```
+
+After you try the staged demo in a real repo, promote it with 'agenthub promote demo-coding-team' to copy the same team into your Personal Home.
+
 Validate a staged package directly:
 
 ```bash

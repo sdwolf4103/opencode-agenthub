@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "promotion_id": "demo-coding-team",
+  "worker_id": "demo-coding-team:profile/demo-coding-team.json",
+  "asset_kind": "profile",
+  "agent_class": "mixed-team",
+  "deployment_role": "primary",
+  "target_profile": "demo-coding-team",
+  "proposed_profile": "demo-coding-team",
+  "package_layout_version": "1",
+  "artifacts": {
+    "promotion_memo": "promotion-memo.md",
+    "worker_card": "worker-card.json",
+    "import_root": "agenthub-home",
+    "profile": "agenthub-home/profiles/demo-coding-team.json"
+  },
+  "generated_at": "2026-03-28T07:03:21Z",
+  "promotion_preferences": {
+    "set_default_profile": false
+  },
+  "operator_instructions": {
+    "test_current_workspace": "agenthub hr demo-coding-team",
+    "use_in_another_workspace": "agenthub hr demo-coding-team",
+    "promote": "agenthub promote demo-coding-team",
+    "advanced_import": "agenthub hub-import --source ~/.config/opencode-agenthub-hr/staging/demo-coding-team/agenthub-home"
+  },
+  "showcase": true
+}

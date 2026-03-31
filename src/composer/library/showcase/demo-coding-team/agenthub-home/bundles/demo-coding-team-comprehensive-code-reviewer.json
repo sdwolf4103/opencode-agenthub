@@ -1,0 +1,28 @@
+{
+  "name": "demo-coding-team-comprehensive-code-reviewer",
+  "runtime": "native",
+  "soul": "demo-coding-team-comprehensive-code-reviewer",
+  "skills": [
+    "obra-superpowers-skills-requesting-code-review-skill",
+    "obra-superpowers-skills-receiving-code-review-skill",
+    "obra-superpowers-skills-verification-before-completion-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "comprehensive-code-reviewer",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/claude-opus-4.6",
+    "variant": "thinking",
+    "description": "Independent comprehensive reviewer callable before implementation or at the end.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "obra-superpowers code-reviewer role",
+    "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+  }
+}

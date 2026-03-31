@@ -108,6 +108,20 @@ Start here:
 agenthub hr
 ```
 
+After bootstrap, a runnable demo team is staged for you:
+
+```bash
+agenthub hr demo-coding-team
+```
+
+If you want to keep it after trying it in a real repo, promote the same demo into your Personal Home:
+
+```bash
+agenthub promote demo-coding-team
+```
+
+It preserves the real seven-role team shape and repo provenance of a strong HR-built coding team, including roles adapted from `agency-agents` and review workflow from `obra/superpowers`. The built-in copy vendors a lightweight vendored skill subset from `obra/superpowers` and `anthropics/skills` so it stays runnable without extra browser or Python-heavy dependencies.
+
 Read the full HR guide at [`docs/hr-office.md`](docs/hr-office.md).
 
 ## Everyday commands

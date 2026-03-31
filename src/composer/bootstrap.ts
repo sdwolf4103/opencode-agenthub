@@ -46,8 +46,20 @@ export type BootstrapAnswers = {
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const libraryRoot = path.join(currentDir, "library");
+const showcaseRoot = path.join(libraryRoot, "showcase");
 
 const sourceRoot = path.dirname(currentDir);
+
+export const hrShowcasePackageId = "demo-coding-team";
+
+export const hrShowcasePackageRoot = (hrRoot = defaultHrHome()) =>
+	path.join(hrRoot, "staging", hrShowcasePackageId);
+
+export const hrShowcaseSeedMarkerPath = (hrRoot = defaultHrHome()) =>
+	path.join(hrRoot, "state", "showcase-seeds", `${hrShowcasePackageId}.json`);
+
+const builtInHrShowcaseSourceRoot = () =>
+	path.join(showcaseRoot, hrShowcasePackageId);
 
 const defaultHrGithubSources = [
 	"garrytan/gstack",
@@ -333,8 +345,40 @@ export const installHrOfficeHomeWithOptions = async ({
 			withBuiltinManifestForMode(mergedSettings, builtinVersion, "hr-office"),
 		);
 	}
+	await seedHrShowcasePackageIfMissing(hrRoot);
 
 	return hrRoot;
+};
+
+export const seedHrShowcasePackageIfMissing = async (
+	hrRoot = defaultHrHome(),
+): Promise<boolean> => {
+	const sourceRoot = builtInHrShowcaseSourceRoot();
+	if (!(await pathExists(sourceRoot))) return false;
+
+	const targetRoot = hrShowcasePackageRoot(hrRoot);
+	if (await pathExists(targetRoot)) return false;
+
+	const markerPath = hrShowcaseSeedMarkerPath(hrRoot);
+	if (await pathExists(markerPath)) return false;
+
+	await mkdir(path.join(hrRoot, "staging"), { recursive: true });
+	await mkdir(path.dirname(markerPath), { recursive: true });
+	await cp(sourceRoot, targetRoot, { recursive: true, force: true });
+	await writeFile(
+		markerPath,
+		`${JSON.stringify(
+			{
+				packageId: hrShowcasePackageId,
+				seededAt: new Date().toISOString(),
+				seedSource: "built-in-showcase",
+			},
+			null,
+			2,
+		)}\n`,
+		"utf-8",
+	);
+	return true;
 };
 
 const copyLibraryReadme = async (targetRoot: string) => {

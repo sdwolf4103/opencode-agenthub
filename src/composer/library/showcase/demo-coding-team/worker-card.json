@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "package_id": "demo-coding-team",
+  "name": "demo-coding-team",
+  "summary": "Demo coding team package with one coding/orchestration host, architecture and implementation specialists, mandatory phase verification, optional preflight/final code review, and a lightweight vendored skill subset for evidence-first exploration support.",
+  "asset_kind": "profile",
+  "agent_class": "mixed-team",
+  "deployment_role": "primary",
+  "profile": "demo-coding-team",
+  "default_agent": "demo-coding-team-coding-delivery-lead",
+  "team_workflow": [
+    "Host can consult architect and specialists during planning and build work.",
+    "Every completed phase must go through the phase verifier before success can be claimed.",
+    "Comprehensive code reviewer can be called at the beginning or end of a work cycle.",
+    "Git discipline is anchored in the host via the using-git-worktrees skill."
+  ],
+  "components": [
+    {
+      "id": "coding-delivery-lead",
+      "seat": "primary",
+      "agent_class": "pure-soul",
+      "bundle": "demo-coding-team-coding-delivery-lead",
+      "soul": "demo-coding-team-coding-delivery-lead",
+      "advisory_model": "openai/gpt-5.4 high"
+    },
+    {
+      "id": "systems-architect",
+      "seat": "subagent",
+      "agent_class": "pure-soul",
+      "bundle": "demo-coding-team-systems-architect",
+      "soul": "demo-coding-team-systems-architect",
+      "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+    },
+    {
+      "id": "frontend-consultant",
+      "seat": "subagent",
+      "agent_class": "mixed soul+skill",
+      "bundle": "demo-coding-team-frontend-consultant",
+      "soul": "demo-coding-team-frontend-consultant",
+      "advisory_model": "github-copilot/gpt-5.4 xhigh"
+    },
+    {
+      "id": "mcp-tooling-consultant",
+      "seat": "subagent",
+      "agent_class": "mixed soul+skill",
+      "bundle": "demo-coding-team-mcp-tooling-consultant",
+      "soul": "demo-coding-team-mcp-tooling-consultant",
+      "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+    },
+    {
+      "id": "phase-verifier",
+      "seat": "subagent",
+      "agent_class": "mixed soul+skill",
+      "bundle": "demo-coding-team-phase-verifier",
+      "soul": "demo-coding-team-phase-verifier",
+      "advisory_model": "github-copilot/claude-sonnet-4.6 thinking"
+    },
+    {
+      "id": "explore-evidence-operator",
+      "seat": "subagent",
+      "agent_class": "mixed soul+skill",
+      "bundle": "demo-coding-team-explore-evidence-operator",
+      "soul": "demo-coding-team-explore-evidence-operator",
+      "advisory_model": "github-copilot/gpt-5.4-mini xhigh"
+    },
+    {
+      "id": "comprehensive-code-reviewer",
+      "seat": "subagent",
+      "agent_class": "pure-soul",
+      "bundle": "demo-coding-team-comprehensive-code-reviewer",
+      "soul": "demo-coding-team-comprehensive-code-reviewer",
+      "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+    }
+  ],
+  "generated_at": "2026-03-28T07:03:21Z",
+  "vendoring_note": "Lightweight skill subset. Four heavyweight skills are excluded from the built-in package; see promotion-memo.md for details.",
+  "showcase": true
+}

@@ -1,0 +1,28 @@
+{
+  "name": "demo-coding-team-phase-verifier",
+  "runtime": "native",
+  "soul": "demo-coding-team-phase-verifier",
+  "skills": [
+    "obra-superpowers-skills-verification-before-completion-skill",
+    "obra-superpowers-skills-requesting-code-review-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "phase-verifier",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/claude-sonnet-4.6",
+    "variant": "thinking",
+    "description": "Mandatory phase gate verifier for the demo coding team.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "agency-agents Reality Checker",
+    "advisory_model": "github-copilot/claude-sonnet-4.6 thinking",
+    "workflow_gate": "required after each completed phase"
+  }
+}

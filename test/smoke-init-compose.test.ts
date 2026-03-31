@@ -5,7 +5,12 @@ import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/pr
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { installAgentHubHome, installHrOfficeHome, installHrOfficeHomeWithOptions } from "../src/composer/bootstrap.js";
+import {
+	hrShowcaseSeedMarkerPath,
+	installAgentHubHome,
+	installHrOfficeHome,
+	installHrOfficeHomeWithOptions,
+} from "../src/composer/bootstrap.js";
 import { buildBuiltinVersionManifest } from "../src/composer/builtin-assets.js";
 import { expandProfileAddSelections } from "../src/composer/capabilities.js";
 import { getDefaultProfilePlugins } from "../src/composer/defaults.js";
@@ -41,6 +46,74 @@ const pathExists = async (target: string) => {
 		return false;
 	}
 };
+
+const demoCodingTeamBundleIds = [
+	"demo-coding-team-coding-delivery-lead",
+	"demo-coding-team-systems-architect",
+	"demo-coding-team-frontend-consultant",
+	"demo-coding-team-mcp-tooling-consultant",
+	"demo-coding-team-phase-verifier",
+	"demo-coding-team-explore-evidence-operator",
+	"demo-coding-team-comprehensive-code-reviewer",
+] as const;
+
+const demoCodingTeamSoulIds = [
+	"demo-coding-team-coding-delivery-lead",
+	"demo-coding-team-systems-architect",
+	"demo-coding-team-frontend-consultant",
+	"demo-coding-team-mcp-tooling-consultant",
+	"demo-coding-team-phase-verifier",
+	"demo-coding-team-explore-evidence-operator",
+	"demo-coding-team-comprehensive-code-reviewer",
+] as const;
+
+const keptDemoSkillIds = [
+	"anthropics-skills-skills-frontend-design-skill",
+	"obra-superpowers-skills-brainstorming-skill",
+	"obra-superpowers-skills-executing-plans-skill",
+	"obra-superpowers-skills-receiving-code-review-skill",
+	"obra-superpowers-skills-requesting-code-review-skill",
+	"obra-superpowers-skills-systematic-debugging-skill",
+	"obra-superpowers-skills-test-driven-development-skill",
+	"obra-superpowers-skills-using-git-worktrees-skill",
+	"obra-superpowers-skills-verification-before-completion-skill",
+	"obra-superpowers-skills-writing-plans-skill",
+] as const;
+
+const droppedDemoSkillIds = [
+	"garrytan-gstack-browse-skill",
+	"garrytan-gstack-plan-eng-review-skill",
+	"anthropics-skills-skills-webapp-testing-skill",
+	"anthropics-skills-skills-mcp-builder-skill",
+] as const;
+
+const demoStagingSkillsRoot = (hrHome: string) =>
+	path.join(hrHome, "staging", "demo-coding-team", "agenthub-home", "skills");
+
+const expectDemoShowcaseSkillSubset = async (skillsRoot: string) => {
+	expect(await pathExists(path.join(skillsRoot, "obra-superpowers-skills-test-driven-development-skill", "SKILL.md"))).toBe(
+		true,
+	);
+	expect(await pathExists(path.join(skillsRoot, "anthropics-skills-skills-frontend-design-skill", "SKILL.md"))).toBe(
+		true,
+	);
+	for (const keptSkill of keptDemoSkillIds) {
+		expect(await pathExists(path.join(skillsRoot, keptSkill, "SKILL.md"))).toBe(true);
+	}
+	for (const droppedSkill of droppedDemoSkillIds) {
+		expect(await pathExists(path.join(skillsRoot, droppedSkill, "SKILL.md"))).toBe(false);
+	}
+};
+
+const demoShowcaseAgentNames = [
+	"coding-delivery-lead",
+	"systems-architect",
+	"frontend-consultant",
+	"mcp-tooling-consultant",
+	"phase-verifier",
+	"explore-evidence-operator",
+	"comprehensive-code-reviewer",
+] as const;
 
 const cliEntry = path.join(process.cwd(), "src", "composer", "opencode-profile.ts");
 const windows = isWindows();
@@ -2736,6 +2809,9 @@ test("bare hr command bootstraps isolated HR Office", async () => {
 		expect(result.stdout).toContain("initialised HR Office");
 		expect(result.stdout).toContain("HR Office is ready");
 		expect(result.stdout).toContain("Tip: change HR models later with 'agenthub doctor'.");
+		expect(result.stdout).toContain("agenthub hr demo-coding-team");
+		expect(result.stdout).toContain("agenthub promote demo-coding-team");
+		expect(result.stdout).toContain("public-repo provenance");
 		expect(result.stdout).not.toContain("Environment: HR Office");
 		expect(result.stdout).not.toContain("HR model settings:");
 		await expect(
@@ -2751,6 +2827,162 @@ test("bare hr command bootstraps isolated HR Office", async () => {
 		expect(settings.agents["hr-evaluator"].model).toBe("openai/gpt-5.4-mini");
 		expect(settings.agents["hr-evaluator"].variant).toBe("high");
 		expect(settings.meta.onboarding.modelStrategy).toBe("recommended");
+		expect(
+			await pathExists(
+				path.join(hrHome, "staging", "demo-coding-team", "agenthub-home", "profiles", "demo-coding-team.json"),
+			),
+		).toBe(true);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("first-run hr demo-coding-team bootstraps HR Office and composes the staged showcase", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-showcase-first-run-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const result = await runCli({
+			args: ["hr", "demo-coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain("HR Office — first-time setup");
+		expect(result.stderr).toContain(
+			"Staging test -> using profile 'demo-coding-team' from staged package 'demo-coding-team'",
+		);
+		const configRoot = result.stdout.trim().split("\n").pop();
+		if (!configRoot) throw new Error("Expected config root output from hr demo-coding-team --assemble-only");
+		const opencodeConfig = parseGeneratedJson(
+			await readFile(path.join(configRoot, "opencode.jsonc"), "utf8"),
+		);
+		const runtimeConfig = parseGeneratedJson(
+			await readFile(path.join(configRoot, "agenthub-runtime.json"), "utf8"),
+		);
+		const lock = parseGeneratedJson(
+			await readFile(path.join(configRoot, "agenthub-lock.json"), "utf8"),
+		);
+
+		expect(opencodeConfig.default_agent).toBe("coding-delivery-lead");
+		expect(Object.keys(opencodeConfig.agent)).toEqual(
+			expect.arrayContaining([...demoShowcaseAgentNames, "explore"]),
+		);
+		expect(opencodeConfig.agent.explore.hidden).toBe(true);
+		expect(runtimeConfig.agents["coding-delivery-lead"].skills).toEqual(
+			expect.arrayContaining([
+				"obra-superpowers-skills-executing-plans-skill",
+				"obra-superpowers-skills-test-driven-development-skill",
+			]),
+		);
+		expect(runtimeConfig.agents["systems-architect"].skills).toEqual(
+			expect.arrayContaining([
+				"obra-superpowers-skills-writing-plans-skill",
+				"obra-superpowers-skills-brainstorming-skill",
+			]),
+		);
+		expect(runtimeConfig.agents["mcp-tooling-consultant"].skills).toEqual(
+			expect.arrayContaining([
+				"obra-superpowers-skills-systematic-debugging-skill",
+				"obra-superpowers-skills-brainstorming-skill",
+			]),
+		);
+		expect(runtimeConfig.agents["explore-evidence-operator"].skills).toEqual(
+			expect.arrayContaining([
+				"obra-superpowers-skills-systematic-debugging-skill",
+				"obra-superpowers-skills-verification-before-completion-skill",
+			]),
+		);
+		expect(runtimeConfig.agents["phase-verifier"].skills).toEqual(
+			expect.arrayContaining([
+				"obra-superpowers-skills-verification-before-completion-skill",
+				"obra-superpowers-skills-requesting-code-review-skill",
+			]),
+		);
+		expect(runtimeConfig.agents["frontend-consultant"].skills).toEqual(
+			expect.arrayContaining([
+				"anthropics-skills-skills-frontend-design-skill",
+			]),
+		);
+		const demoSkillSets = [
+			runtimeConfig.agents["systems-architect"].skills,
+			runtimeConfig.agents["frontend-consultant"].skills,
+			runtimeConfig.agents["mcp-tooling-consultant"].skills,
+			runtimeConfig.agents["explore-evidence-operator"].skills,
+		].flat();
+		expect(demoSkillSets).not.toContain("garrytan-gstack-browse-skill");
+		expect(demoSkillSets).not.toContain("garrytan-gstack-plan-eng-review-skill");
+		expect(demoSkillSets).not.toContain("anthropics-skills-skills-webapp-testing-skill");
+		expect(demoSkillSets).not.toContain("anthropics-skills-skills-mcp-builder-skill");
+		expect(lock.source.kind).toBe("hr-staged-package");
+		expect(lock.source.packageId).toBe("demo-coding-team");
+		await expectDemoShowcaseSkillSubset(demoStagingSkillsRoot(hrHome));
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("existing HR Office backfills the showcase staged team when it is missing", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-showcase-backfill-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+			installAgentHubHome({ targetRoot: personalHome, mode: "auto" }),
+			installHrOfficeHomeWithOptions({ hrRoot: hrHome }),
+		]);
+
+		await rm(path.join(hrHome, "staging", "demo-coding-team"), {
+			recursive: true,
+			force: true,
+		});
+		await rm(hrShowcaseSeedMarkerPath(hrHome), {
+			recursive: true,
+			force: true,
+		});
+
+		const result = await runCli({
+			args: ["hr", "demo-coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(result.code).toBe(0);
+		expect(result.stderr).toContain(
+			"Staging test -> using profile 'demo-coding-team' from staged package 'demo-coding-team'",
+		);
+		expect(
+			await pathExists(
+				path.join(hrHome, "staging", "demo-coding-team", "agenthub-home", "profiles", "demo-coding-team.json"),
+			),
+		).toBe(true);
+		await expectDemoShowcaseSkillSubset(demoStagingSkillsRoot(hrHome));
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
@@ -4239,6 +4471,86 @@ test("promote imports staged HR package into personal home with safe defaults", 
 	}
 });
 
+test("promote demo-coding-team imports the built-in showcase into personal home", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-promote-demo-coding-team-"));
+	try {
+		const homeDir = path.join(tempRoot, "home");
+		const xdgHomeDir = path.join(tempRoot, "xdg-home");
+		const personalHome = path.join(tempRoot, "personal-home");
+		const hrHome = path.join(tempRoot, "hr-home");
+		const workspace = path.join(tempRoot, "workspace");
+		await Promise.all([
+			mkdir(homeDir, { recursive: true }),
+			mkdir(xdgHomeDir, { recursive: true }),
+			mkdir(workspace, { recursive: true }),
+		]);
+
+		const bootstrapResult = await runCli({
+			args: ["hr", "demo-coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(bootstrapResult.code).toBe(0);
+		expect(bootstrapResult.stderr).toContain(
+			"Staging test -> using profile 'demo-coding-team' from staged package 'demo-coding-team'",
+		);
+
+		const promoteResult = await runCli({
+			args: ["promote", "demo-coding-team"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(promoteResult.code).toBe(0);
+		expect(promoteResult.stdout).toContain("Promote complete");
+		expect(
+			await readFile(path.join(personalHome, "profiles", "demo-coding-team.json"), "utf8"),
+		).toContain("\"demo-coding-team\"");
+
+		for (const bundleId of demoCodingTeamBundleIds) {
+			expect(await pathExists(path.join(personalHome, "bundles", `${bundleId}.json`))).toBe(true);
+		}
+		for (const soulId of demoCodingTeamSoulIds) {
+			expect(await pathExists(path.join(personalHome, "souls", `${soulId}.md`))).toBe(true);
+		}
+		await expectDemoShowcaseSkillSubset(path.join(personalHome, "skills"));
+
+		const startResult = await runCli({
+			args: ["start", "demo-coding-team", "--assemble-only"],
+			cwd: workspace,
+			env: {
+				OPENCODE_AGENTHUB_HOME: personalHome,
+				OPENCODE_AGENTHUB_HR_HOME: hrHome,
+				HOME: homeDir,
+				XDG_CONFIG_HOME: xdgHomeDir,
+			},
+		});
+
+		expect(startResult.code).toBe(0);
+		const configRoot = startResult.stdout.trim().split("\n").pop();
+		if (!configRoot) throw new Error("Expected config root output from start demo-coding-team --assemble-only");
+		const lock = parseGeneratedJson(
+			await readFile(path.join(configRoot, "agenthub-lock.json"), "utf8"),
+		);
+		expect(lock.libraryRoot).toBe(personalHome);
+		expect(lock.profile).toBe("demo-coding-team");
+		expect(lock.source.kind).toBe("personal-home");
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test("promote fails clearly when staged MCP package declares missing server artifacts", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-promote-mcp-missing-"));
 	try {
@@ -4327,6 +4639,55 @@ test("promote fails clearly when staged MCP package declares missing server arti
 		expect(result.stderr).toContain("required MCP server artifacts are missing");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("demo showcase worker-card advisory_model metadata stays aligned with bundle metadata", async () => {
+	const workerCard = JSON.parse(
+		await readFile(
+			path.join(
+				process.cwd(),
+				"src/composer/library/showcase/demo-coding-team/worker-card.json",
+			),
+			"utf8",
+		),
+	) as {
+		components: Array<{ id: string; advisory_model?: string }>;
+	};
+
+	const componentAdvisoryModels = new Map(
+		workerCard.components.map((component) => [component.id, component.advisory_model]),
+	);
+
+	for (const [componentId, bundleFile] of [
+		["coding-delivery-lead", "demo-coding-team-coding-delivery-lead.json"],
+		["systems-architect", "demo-coding-team-systems-architect.json"],
+		["frontend-consultant", "demo-coding-team-frontend-consultant.json"],
+		["mcp-tooling-consultant", "demo-coding-team-mcp-tooling-consultant.json"],
+		["phase-verifier", "demo-coding-team-phase-verifier.json"],
+		["explore-evidence-operator", "demo-coding-team-explore-evidence-operator.json"],
+		["comprehensive-code-reviewer", "demo-coding-team-comprehensive-code-reviewer.json"],
+	] as const) {
+		const bundle = JSON.parse(
+			await readFile(
+				path.join(
+					process.cwd(),
+					"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles",
+					bundleFile,
+				),
+				"utf8",
+			),
+		) as {
+			agent: { model: string; variant?: string };
+			metadata?: { advisory_model?: string };
+		};
+
+		const expectedAdvisoryModel = bundle.agent.variant
+			? `${bundle.agent.model} ${bundle.agent.variant}`
+			: bundle.agent.model;
+
+		expect(bundle.metadata?.advisory_model).toBe(expectedAdvisoryModel);
+		expect(componentAdvisoryModels.get(componentId)).toBe(expectedAdvisoryModel);
 	}
 });
 

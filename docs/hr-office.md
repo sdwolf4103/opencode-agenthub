@@ -12,6 +12,32 @@ Use it when you want to tell Agent Hub, in plain English, what kind of team you 
 agenthub hr
 ```
 
+## Try the demo team
+
+After HR bootstrap, a runnable demo package is staged for you:
+
+```bash
+agenthub hr demo-coding-team
+```
+
+This demo preserves the real seven-role team shape and public repo provenance from a working HR-built package. The built-in copy vendors a lightweight vendored skill subset so it stays portable and runnable out of the box:
+
+- `coding-delivery-lead` is the main host for daily delivery
+- `systems-architect`, `frontend-consultant`, `mcp-tooling-consultant`, `phase-verifier`, and `explore-evidence-operator` are adapted from roles HR found in `msitarzewski/agency-agents`
+- `comprehensive-code-reviewer` is adapted from `obra/superpowers`
+- the built-in vendored skills come from `obra/superpowers` and `anthropics/skills`
+- heavier browser and MCP helper skill packages used in the original staged team are intentionally left out of the built-in copy to avoid extra runtime dependencies
+
+If you like it, you can promote it into your Personal Home:
+
+```bash
+agenthub promote demo-coding-team
+```
+
+Try it in a repo, inspect it, then promote it if you want to keep the same team in your normal setup.
+
+The demo is there to make the HR outcome concrete, show the stage → test → promote path, and let you inspect a high-quality sourced team before asking HR to build one tailored to your own stack and workflow.
+
 Example asks:
 
 - `I want an agent that can build and verify TypeScript CLIs. Use strong public references, shortlist candidates, and stage a package for me.`

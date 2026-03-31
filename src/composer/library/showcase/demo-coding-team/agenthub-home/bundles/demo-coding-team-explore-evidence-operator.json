@@ -1,0 +1,27 @@
+{
+  "name": "demo-coding-team-explore-evidence-operator",
+  "runtime": "native",
+  "soul": "demo-coding-team-explore-evidence-operator",
+  "skills": [
+    "obra-superpowers-skills-systematic-debugging-skill",
+    "obra-superpowers-skills-verification-before-completion-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "explore-evidence-operator",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/gpt-5.4-mini",
+    "variant": "xhigh",
+    "description": "Exploration and evidence-gathering specialist for current behavior and regression checks.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "agency-agents Evidence Collector",
+    "advisory_model": "github-copilot/gpt-5.4-mini xhigh"
+  }
+}

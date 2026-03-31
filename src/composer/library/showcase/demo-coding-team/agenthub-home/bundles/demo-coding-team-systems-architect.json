@@ -1,0 +1,27 @@
+{
+  "name": "demo-coding-team-systems-architect",
+  "runtime": "native",
+  "soul": "demo-coding-team-systems-architect",
+  "skills": [
+    "obra-superpowers-skills-writing-plans-skill",
+    "obra-superpowers-skills-brainstorming-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "systems-architect",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/claude-opus-4.6",
+    "variant": "thinking",
+    "description": "Architecture and tradeoff specialist for the demo coding team.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "agency-agents Software Architect",
+    "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+  }
+}

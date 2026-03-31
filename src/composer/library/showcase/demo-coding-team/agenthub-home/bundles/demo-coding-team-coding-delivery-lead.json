@@ -1,0 +1,30 @@
+{
+  "name": "demo-coding-team-coding-delivery-lead",
+  "runtime": "native",
+  "soul": "demo-coding-team-coding-delivery-lead",
+  "skills": [
+    "obra-superpowers-skills-executing-plans-skill",
+    "obra-superpowers-skills-test-driven-development-skill",
+    "obra-superpowers-skills-systematic-debugging-skill",
+    "obra-superpowers-skills-receiving-code-review-skill",
+    "obra-superpowers-skills-using-git-worktrees-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "coding-delivery-lead",
+    "mode": "primary",
+    "hidden": false,
+    "model": "openai/gpt-5.4",
+    "variant": "high",
+    "description": "Primary coding and orchestration host for the demo coding team.",
+    "permission": {
+      "*": "allow"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "primary",
+    "advisory_model": "openai/gpt-5.4 high",
+    "workflow_gate": "send every completed phase to phase-verifier before claiming success"
+  }
+}
