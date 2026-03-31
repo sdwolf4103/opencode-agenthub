@@ -52,6 +52,8 @@ test("doctor --json returns structured report with verdict and remediation", asy
 		expect(parsed.issues[0].checkId).toBeTruthy();
 		expect(parsed.issues[0].remediation).toBeTruthy();
 		expect(typeof parsed.issues[0].autoFixable).toBe("boolean");
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId?.startsWith("environment/"))).toBe(false);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId?.startsWith("plugin/"))).toBe(false);
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
@@ -187,6 +189,78 @@ test("doctor --category=environment reports toolchain health", async () => {
 		expect(parsed.healthy.some((item: string) => item.includes("Node.js available"))).toBe(true);
 		expect(parsed.healthy.some((item: string) => item.includes("Python available") || item.includes("opencode available"))).toBe(true);
 		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "missing_guards")).toBe(false);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("doctor --category=home uses home registry checks", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-home-category-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		await mkdir(path.join(targetRoot, "profiles"), { recursive: true });
+		await mkdir(path.join(targetRoot, "bundles"), { recursive: true });
+		await writeFile(
+			path.join(targetRoot, "settings.json"),
+			`${JSON.stringify({ guards: { read_only: { description: "ro" } } }, null, 2)}\n`,
+			"utf8",
+		);
+
+		const result = await runCli({
+			args: ["doctor", "--target-root", targetRoot, "--json", "--category", "home"],
+			cwd: tempRoot,
+		});
+
+		expect(result.code).toBe(1);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "home/missing-guards")).toBe(true);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "missing_guards")).toBe(false);
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("doctor ignores non-native bundles in mixed OMO profile check", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-doctor-omo-runtime-"));
+	try {
+		const targetRoot = path.join(tempRoot, "agenthub-home");
+		await mkdir(path.join(targetRoot, "profiles"), { recursive: true });
+		await mkdir(path.join(targetRoot, "bundles"), { recursive: true });
+		await writeFile(
+			path.join(targetRoot, "settings.json"),
+			`${JSON.stringify({
+				guards: {
+					read_only: { description: "ro" },
+					no_task: { description: "nt" },
+					no_omo: { description: "no omo" },
+				},
+			}, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(targetRoot, "bundles", "omo.json"),
+			`${JSON.stringify({ name: "omo", runtime: "omo" }, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(targetRoot, "bundles", "remote.json"),
+			`${JSON.stringify({ name: "remote", runtime: "remote" }, null, 2)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			path.join(targetRoot, "profiles", "mixed.json"),
+			`${JSON.stringify({ name: "mixed", bundles: ["omo", "remote"] }, null, 2)}\n`,
+			"utf8",
+		);
+
+		const result = await runCli({
+			args: ["doctor", "--target-root", targetRoot, "--json", "--category", "home"],
+			cwd: tempRoot,
+		});
+
+		expect(result.code).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.issues.some((issue: { checkId?: string }) => issue.checkId === "home/omo-mixed-profile")).toBe(false);
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}

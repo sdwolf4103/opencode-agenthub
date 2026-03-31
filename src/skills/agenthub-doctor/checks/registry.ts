@@ -1,6 +1,7 @@
 import type { DiagnosticCheck } from "./types.js";
 import { inspectRuntimeConfig, summarizeRuntimeFeatureState } from "../../../plugins/runtime-config.js";
 import { readBinaryVersion, resolveOnPath } from "./utils.js";
+import { homeChecks } from "./home.js";
 
 const environmentChecks: DiagnosticCheck[] = [
 	{
@@ -156,6 +157,7 @@ const workspaceChecks: DiagnosticCheck[] = [
 ];
 
 export const registeredChecks: DiagnosticCheck[] = [
+	...homeChecks,
 	...environmentChecks,
 	...workspaceChecks,
 	...pluginChecks,
