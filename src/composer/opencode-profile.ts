@@ -212,6 +212,10 @@ type ParsedArgs = {
 	doctorOptions: {
 		fixAll: boolean;
 		dryRun: boolean;
+		json?: boolean;
+		quiet?: boolean;
+		strict?: boolean;
+		category?: "environment" | "home" | "workspace" | "plugin";
 		agent?: string;
 		model?: string;
 		clearModel: boolean;
@@ -345,6 +349,10 @@ FLAGS (doctor / hub-doctor)
   --target-root <path>   Agent Hub home to inspect (default: ${agentHubHomePath})
   --fix-all              Apply all safe automatic fixes
   --dry-run              Preview fixes without writing
+  --json                 Print machine-readable diagnostic report
+  --quiet                Print only the final doctor verdict
+  --strict               Treat warnings as non-zero exit status
+  --category <name>      Reserved for phased doctor filtering (environment|home|workspace|plugin)
   --agent <name>         Target a specific agent
   --model <model>        Override the agent's model
   --clear-model          Remove the agent's model override
@@ -497,6 +505,9 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 	const doctorOptions: ParsedArgs["doctorOptions"] = {
 		fixAll: false,
 		dryRun: false,
+		json: false,
+		quiet: false,
+		strict: false,
 		clearModel: false,
 		clearPrompt: false,
 	};
@@ -750,7 +761,25 @@ const parseArgs = (argv: string[]): ParsedArgs => {
 		}
 		if (arg === "--json") {
 			statusOptions.json = true;
+			doctorOptions.json = true;
 			continue;
+		}
+		if (arg === "--quiet") {
+			doctorOptions.quiet = true;
+			continue;
+		}
+		if (arg === "--strict") {
+			doctorOptions.strict = true;
+			continue;
+		}
+		if (arg === "--category") {
+			const value = argv[index + 1];
+			if (value === "environment" || value === "home" || value === "workspace" || value === "plugin") {
+				doctorOptions.category = value;
+				index += 1;
+				continue;
+			}
+			fail("'--category' requires one of: environment, home, workspace, plugin");
 		}
 		if (arg === "--target-root") {
 			const resolved = path.resolve(argv[index + 1] || defaultAgentHubHome());
@@ -2906,39 +2935,10 @@ if (parsed.command === "plugin") {
 	if (parsed.pluginSubcommand !== "doctor") {
 		fail("Use 'plugin doctor'.");
 	}
-	const configRoot = resolvePluginConfigRoot(parsed.configRoot);
-	const runtimeInspection = await inspectRuntimeConfig(configRoot);
-	process.stdout.write(`Plugin doctor\n`);
-	process.stdout.write(`- config root: ${configRoot}\n`);
-	process.stdout.write(`- runtime file: ${runtimeInspection.runtimeConfigPath}\n`);
-	if (!runtimeInspection.ok) {
-		process.stdout.write(`- runtime config: missing or unreadable\n`);
-		process.stdout.write(`- active mode: degraded\n`);
-		process.stdout.write(`- blocked tools: call_omo_agent (safety fallback)\n`);
-		process.stdout.write(`- plan detection: disabled\n`);
-		process.stdout.write(`Next: run '${cliCommand} start auto' or compose a profile to generate agenthub-runtime.json.\n`);
-	} else {
-		const summary = summarizeRuntimeFeatureState(runtimeInspection.config);
-		process.stdout.write(`- runtime config: ok\n`);
-		process.stdout.write(`- active mode: composed runtime\n`);
-		process.stdout.write(`- blocked tools: ${Array.from(summary.blockedTools).sort().join(", ") || "(none)"}\n`);
-		process.stdout.write(`- plan detection: ${summary.planDetection?.enabled ? "enabled" : "disabled"}\n`);
-	}
-	const pluginConfigPath = path.join(configRoot, "opencode.jsonc");
-	const xdgPluginConfigPath = path.join(configRoot, "xdg", "opencode", "opencode.json");
-	let pluginRegistered = false;
-	for (const filePath of [pluginConfigPath, xdgPluginConfigPath]) {
-		const config = await readJsonIfExists<{ plugin?: unknown }>(filePath);
-		if (Array.isArray(config?.plugin) && config.plugin.includes("opencode-agenthub")) {
-			pluginRegistered = true;
-			break;
-		}
-	}
-	process.stdout.write(`- plugin registered: ${pluginRegistered ? "yes" : "no"}\n`);
-	if (!pluginRegistered) {
-		process.stdout.write(`Next: compose a profile so opencode.jsonc includes 'opencode-agenthub'.\n`);
-	}
-	process.exit(0);
+	process.stderr.write(`[agenthub] 'plugin doctor' is deprecated; use '${cliCommand} doctor --category=plugin' instead.\n`);
+	parsed.command = "doctor";
+	parsed.doctorOptions.category = "plugin";
+	parsed.doctorOptions.quiet = true;
 }
 
 if (parsed.command === "status") {
@@ -3032,8 +3032,30 @@ if (parsed.command === "doctor" || parsed.command === "hub-doctor") {
 		process.exit(0);
 	}
 
-	process.stdout.write("🔍 Running Agent Hub diagnostics...\n\n");
-	const report = await runDiagnostics(targetRoot);
+	if (!parsed.doctorOptions.json && !parsed.doctorOptions.quiet) {
+		process.stdout.write("🔍 Running Agent Hub diagnostics...\n\n");
+	}
+	const report = await runDiagnostics(targetRoot, {
+		configRoot: parsed.configRoot,
+		workspace: parsed.workspace,
+	});
+	const strictMode = parsed.doctorOptions.strict === true;
+	const renderCompactVerdict = () => {
+		if (report.verdict === "fail") return "Doctor: fail";
+		if (report.verdict === "warn") return "Doctor: warnings present";
+		return "Doctor: pass";
+	};
+	const doctorExitCode =
+		report.verdict === "fail" || (strictMode && report.verdict === "warn") ? 1 : 0;
+
+	if (parsed.doctorOptions.json) {
+		process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+		process.exit(doctorExitCode);
+	}
+	if (parsed.doctorOptions.quiet) {
+		process.stdout.write(`${renderCompactVerdict()}\n`);
+		process.exit(doctorExitCode);
+	}
 
 	if (report.healthy.length > 0) {
 		process.stdout.write("✅ Healthy:\n");
@@ -3065,12 +3087,18 @@ if (parsed.command === "doctor" || parsed.command === "hub-doctor") {
 					? "⚠️ "
 					: "ℹ️ ";
 		process.stdout.write(`  ${icon} ${issue.message}\n`);
+		if (issue.remediation) {
+			process.stdout.write(`     → ${issue.remediation}\n`);
+		}
+		if (issue.docLink) {
+			process.stdout.write(`     → See: ${issue.docLink}\n`);
+		}
 	}
 	process.stdout.write("\n");
 
 	if (parsed.doctorOptions.dryRun) {
 		process.stdout.write("(Dry run - no fixes applied)\n");
-		process.exit(0);
+		process.exit(doctorExitCode);
 	}
 
 	if (parsed.doctorOptions.fixAll) {
@@ -3129,12 +3157,23 @@ if (parsed.command === "doctor" || parsed.command === "hub-doctor") {
 			);
 		}
 
-		process.stdout.write("\n✅ All fixes applied!\n");
-		process.exit(0);
+		process.stdout.write("\n🔁 Re-running diagnostics...\n");
+		const rerun = await runDiagnostics(targetRoot, {
+			configRoot: parsed.configRoot,
+			workspace: parsed.workspace,
+		});
+		process.stdout.write(
+			rerun.issues.length === 0
+				? "✅ All fixes applied and re-verified cleanly!\n"
+				: `⚠️  Fixes applied, but ${rerun.issues.length} issue(s) remain.\n`,
+		);
+		process.exit(
+			rerun.verdict === "fail" || (strictMode && rerun.verdict === "warn") ? 1 : 0,
+		);
 	}
 
 	await interactiveAssembly(targetRoot, report);
-	process.exit(0);
+	process.exit(doctorExitCode);
 }
 
 if (parsed.command === "list") {

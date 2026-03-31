@@ -463,8 +463,8 @@ test("plugin doctor reports degraded mode when runtime config is missing", async
 			cwd: workspace,
 		});
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("runtime config: missing or unreadable");
-		expect(result.stdout).toContain("active mode: degraded");
+		expect(result.stderr).toContain("deprecated");
+		expect(result.stdout).toContain("Doctor:");
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}

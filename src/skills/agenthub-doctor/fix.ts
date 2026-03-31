@@ -1,27 +1,9 @@
 import path from "node:path";
-import { readdir, readFile, writeFile, access } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { getDefaultProfilePlugins } from "../../composer/defaults.js";
 import { readAgentHubSettings, writeAgentHubSettings } from "../../composer/settings.js";
 import type { AgentHubSettings } from "../../types.js";
-
-// Utility functions
-const readJson = async <T>(filePath: string): Promise<T> => {
-	const content = await readFile(filePath, "utf-8");
-	return JSON.parse(content) as T;
-};
-
-const writeJson = async (filePath: string, data: unknown): Promise<void> => {
-	await writeFile(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
-};
-
-const pathExists = async (p: string): Promise<boolean> => {
-	try {
-		await access(p);
-		return true;
-	} catch {
-		return false;
-	}
-};
+import { pathExists, readJson, writeJson } from "./checks/utils.js";
 
 /**
  * Default guard definitions

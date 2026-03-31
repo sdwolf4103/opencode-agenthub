@@ -1,22 +1,8 @@
-import { readdir, readFile, access } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { readAgentHubSettings } from "../../composer/settings.js";
 import { validateModelIdentifier } from "../../composer/model-utils.js";
-
-// Utility functions
-const readJson = async <T>(filePath: string): Promise<T> => {
-	const content = await readFile(filePath, "utf-8");
-	return JSON.parse(content) as T;
-};
-
-const pathExists = async (p: string): Promise<boolean> => {
-	try {
-		await access(p);
-		return true;
-	} catch {
-		return false;
-	}
-};
+import { pathExists, readJson } from "./checks/utils.js";
 
 export interface DiagnosticIssue {
 	type:
@@ -35,13 +21,20 @@ export interface DiagnosticIssue {
 	severity: "error" | "warning" | "info";
 	message: string;
 	details?: unknown;
+	checkId?: string;
+	remediation?: string;
+	autoFixable?: boolean;
+	docLink?: string;
 }
 
 export interface DiagnosticReport {
+	verdict?: "pass" | "warn" | "fail";
 	healthy: string[];
 	issues: DiagnosticIssue[];
 	metadata: {
 		targetRoot: string;
+		configRoot?: string;
+		workspace?: string;
 		timestamp: string;
 	};
 }
@@ -54,12 +47,30 @@ const REQUIRED_GUARDS = ["read_only", "no_task", "no_omo"];
 /**
  * Run comprehensive diagnostics on Agent Hub installation
  */
-export async function runDiagnostics(targetRoot: string): Promise<DiagnosticReport> {
+const withIssueDefaults = (issue: DiagnosticIssue): DiagnosticIssue => ({
+	...issue,
+	checkId: issue.checkId ?? issue.type,
+	remediation: issue.remediation ?? "Review the reported issue and update the related Agent Hub configuration.",
+	autoFixable: issue.autoFixable ?? false,
+});
+
+const computeVerdict = (issues: DiagnosticIssue[]): "pass" | "warn" | "fail" => {
+	if (issues.some((issue) => issue.severity === "error")) return "fail";
+	if (issues.some((issue) => issue.severity === "warning")) return "warn";
+	return "pass";
+};
+
+export async function runDiagnostics(
+	targetRoot: string,
+	options?: { configRoot?: string; workspace?: string },
+): Promise<DiagnosticReport> {
 	const report: DiagnosticReport = {
 		healthy: [],
 		issues: [],
 		metadata: {
 			targetRoot,
+			...(options?.configRoot ? { configRoot: options.configRoot } : {}),
+			...(options?.workspace ? { workspace: options.workspace } : {}),
 			timestamp: new Date().toISOString(),
 		},
 	};
@@ -67,12 +78,14 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Check settings.json exists
 	const settingsPath = path.join(targetRoot, "settings.json");
 	if (!(await pathExists(settingsPath))) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "invalid_settings",
 			severity: "error",
 			message: "settings.json not found",
 			details: { path: settingsPath },
-		});
+			remediation: "Create or restore settings.json in the target Agent Hub home.",
+		}));
+		report.verdict = computeVerdict(report.issues);
 		return report; // Cannot continue without settings
 	}
 	report.healthy.push("Settings file exists");
@@ -80,23 +93,28 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Load settings
 	const settings = await readAgentHubSettings(targetRoot);
 	if (!settings) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "invalid_settings",
 			severity: "error",
 			message: "Failed to read settings.json",
-		});
+			remediation: "Repair the JSON syntax in settings.json or restore it from backup.",
+		}));
+		report.verdict = computeVerdict(report.issues);
 		return report;
 	}
 
 	// Check for missing guards
 	const missingGuards = await diagnoseMissingGuards(settings);
 	if (missingGuards.length > 0) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "missing_guards",
 			severity: "warning",
 			message: `Missing guards: ${missingGuards.join(", ")}`,
 			details: { guards: missingGuards },
-		});
+			remediation: "Run 'agenthub doctor --fix-all' to recreate the required guard definitions.",
+			autoFixable: true,
+			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+		}));
 	} else {
 		report.healthy.push("All required guards present");
 	}
@@ -104,12 +122,15 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Check for orphaned souls
 	const orphanedSouls = await diagnoseOrphanedSouls(targetRoot);
 	if (orphanedSouls.length > 0) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "orphaned_souls",
 			severity: "warning",
 			message: `${orphanedSouls.length} souls not referenced by any bundle`,
 			details: { souls: orphanedSouls },
-		});
+			remediation: "Create bundles for these souls or remove the unused soul files. 'agenthub doctor --fix-all' can create bundles automatically.",
+			autoFixable: true,
+			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+		}));
 	} else {
 		report.healthy.push("All souls have bundles");
 	}
@@ -117,22 +138,27 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Check for orphaned skills
 	const orphanedSkills = await diagnoseOrphanedSkills(targetRoot);
 	if (orphanedSkills.length > 0) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "orphaned_skills",
 			severity: "info",
 			message: `${orphanedSkills.length} skills not referenced by any bundle`,
 			details: { skills: orphanedSkills },
-		});
+			remediation: "Attach the skills to a bundle or remove them if they are no longer needed.",
+			docLink: "docs/troubleshooting/guard-and-skill-conflicts.md",
+		}));
 	}
 
 	// Check for profiles
 	const profilesExist = await diagnoseProfiles(targetRoot);
 	if (!profilesExist) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "no_profiles",
 			severity: "error",
 			message: "No profiles found - cannot run agents",
-		});
+			remediation: "Create a profile or import one from another Agent Hub home. 'agenthub doctor --fix-all' can create a starter profile if bundles exist.",
+			autoFixable: true,
+			docLink: "docs/troubleshooting/compose-failures.md",
+		}));
 	} else {
 		report.healthy.push("Profiles exist");
 	}
@@ -140,11 +166,13 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Check for bundles
 	const bundlesExist = await diagnoseBundles(targetRoot);
 	if (!bundlesExist) {
-		report.issues.push({
+		report.issues.push(withIssueDefaults({
 			type: "no_bundles",
 			severity: "error",
 			message: "No bundles found - cannot compose agents",
-		});
+			remediation: "Create or import at least one bundle before composing profiles.",
+			docLink: "docs/troubleshooting/compose-failures.md",
+		}));
 	} else {
 		report.healthy.push("Bundles exist");
 	}
@@ -152,21 +180,23 @@ export async function runDiagnostics(targetRoot: string): Promise<DiagnosticRepo
 	// Check for OMO mixed profile issues
 	const omoIssue = await diagnoseOmoMixedProfile(targetRoot);
 	if (omoIssue) {
-		report.issues.push(omoIssue);
+		report.issues.push(withIssueDefaults(omoIssue));
 	}
 
 	for (const issue of diagnoseInvalidModelSyntax(settings)) {
-		report.issues.push(issue);
+		report.issues.push(withIssueDefaults(issue));
 	}
 
 	for (const issue of await diagnoseLocalPluginBridge(targetRoot, settings)) {
-		report.issues.push(issue);
+		report.issues.push(withIssueDefaults(issue));
 	}
 
 	const omoBaselineIssue = await diagnoseOmoBaseline(settings);
 	if (omoBaselineIssue) {
-		report.issues.push(omoBaselineIssue);
+		report.issues.push(withIssueDefaults(omoBaselineIssue));
 	}
+
+	report.verdict = computeVerdict(report.issues);
 
 	return report;
 }
@@ -185,6 +215,8 @@ const diagnoseInvalidModelSyntax = (
 				severity: "error",
 				message: `Agent '${agentName}' has an invalid model override: ${syntax.message}`,
 				details: { agentName, model: agent.model },
+				remediation: "Update the model override to provider/model format, for example openai/gpt-5.4-mini.",
+				docLink: "docs/troubleshooting/model-configuration.md",
 			});
 		}
 	}
@@ -353,6 +385,9 @@ async function diagnoseOmoMixedProfile(
 					type: "omo_mixed_profile",
 					severity: "warning",
 					message: `Profile '${profileEntry.name.replace(".json", "")}' has OMO bundles but native agents lack no_omo guard`,
+					remediation: "Add the no_omo guard to native bundles in mixed OMO profiles, or run 'agenthub doctor --fix-all' if available.",
+					autoFixable: true,
+					docLink: "docs/troubleshooting/omo-mixed-profile.md",
 					details: {
 						profile: profileEntry.name.replace(".json", ""),
 						omoBundles,
@@ -389,6 +424,8 @@ async function diagnoseLocalPluginBridge(
 			type: "local_plugins_not_bridged",
 			severity: "info",
 			message: `Local plugins exist in ${sourceDir} but bridge is disabled. Set localPlugins.bridge = true to copy them into the runtime.`,
+			remediation: "Set localPlugins.bridge = true in settings.json, then re-compose your workspace runtime.",
+			docLink: "docs/troubleshooting/plugin-degraded-mode.md",
 			details: { sourceDir, plugins: sourcePlugins },
 		});
 		return issues;
@@ -397,6 +434,8 @@ async function diagnoseLocalPluginBridge(
 		type: "local_plugin_source_changed",
 		severity: "info",
 		message: `Local plugin bridge is enabled. Re-compose workspaces after changing plugins in ${sourceDir}.`,
+		remediation: "Run 'agenthub start <profile>' or 'agenthub hr <profile>' again to refresh copied plugin files.",
+		docLink: "docs/troubleshooting/plugin-degraded-mode.md",
 		details: { sourceDir, plugins: sourcePlugins },
 	});
 	return issues;
@@ -417,6 +456,8 @@ async function diagnoseOmoBaseline(
 			type: "omo_baseline_active",
 			severity: "info",
 			message: `Global OMO baseline is active from ${baselinePath}. Set omoBaseline = "ignore" in settings.json to isolate Agent Hub runtime from it.`,
+			remediation: "Set omoBaseline = \"ignore\" in settings.json if you want Agent Hub runtime to stop inheriting the global baseline.",
+			docLink: "docs/troubleshooting/omo-mixed-profile.md",
 			details: { baselinePath },
 		};
 	}
@@ -427,5 +468,7 @@ async function diagnoseOmoBaseline(
 		type: "omo_baseline_missing",
 		severity: "info",
 		message: "OMO baseline mode is inherit, but no global oh-my-opencode.json was found.",
+		remediation: "Create a global oh-my-opencode.json if you want shared OMO categories, or set omoBaseline = \"ignore\" to silence this informational check.",
+		docLink: "docs/troubleshooting/omo-mixed-profile.md",
 	};
 }

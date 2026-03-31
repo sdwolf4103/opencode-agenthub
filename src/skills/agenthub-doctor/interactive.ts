@@ -1,5 +1,5 @@
 import readline from "node:readline/promises";
-import { readdir, readFile, access, writeFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import {
 	loadNativeOpenCodeConfig,
@@ -19,25 +19,7 @@ import {
 	resolveDefaultAgentForBundles,
 } from "./fix.js";
 import type { DiagnosticReport } from "./diagnose.js";
-
-// Utility functions
-const pathExists = async (p: string): Promise<boolean> => {
-	try {
-		await access(p);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const readJson = async <T>(filePath: string): Promise<T> => {
-	const content = await readFile(filePath, "utf-8");
-	return JSON.parse(content) as T;
-};
-
-const writeJson = async (filePath: string, data: unknown): Promise<void> => {
-	await writeFile(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
-};
+import { pathExists, readJson, writeJson } from "./checks/utils.js";
 
 // ============================================================================
 // MAIN MENU
