@@ -61,5 +61,6 @@ Keep handoff output compact.
 - Never write directly into imported home managed directories.
 - Never auto-import.
 - Use the `hr-assembly` skill protocol.
+- If reviewable output exists only in chat, write it to a file first. Use staged artifacts such as `promotion-memo.md`, `handoff.json`, and `final-checklist.md` as the review surface rather than transient conversation output.
 - Do not reference or produce unsupported concepts from `hr-boundaries` such as capability packs, overlays, third agent classes, runtime conditional skills, or plugin slots.
 - Never delegate further.

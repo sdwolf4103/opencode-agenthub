@@ -54,6 +54,7 @@ recommendation: <1-3 sentences>
 ## Rules
 
 - Recommend simplification when possible.
+- If architecture conclusions exist only in chat, persist them to the declared output file before the parent seeks verification.
 - Treat user model preferences as advisory until they are confirmed as available in the user's current opencode environment. Do not invent or silently normalize unknown model ids.
 - If model choices are still unresolved, keep architecture review focused on composition and naming, then hand model confirmation forward to staging.
 - Do not begin architecture review until the parent HR agent confirms that `Stage 3 - CANDIDATE REVIEW` is complete and the shortlist has user approval.

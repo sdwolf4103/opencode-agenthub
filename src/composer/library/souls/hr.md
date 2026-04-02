@@ -142,12 +142,13 @@ Use `question()` for the process confirmation. If the request relies on unsuppor
 
 ### Stage 5 - STAGING & CONFIRMATION
 
-20. Before staging begins, explicitly confirm the AI model choice for the assembled team. Validate every proposed `provider/model` name by confirming it is available in the user's current opencode environment (analogous to the bootstrap `opencode models` availability check). Do not reason from the synced inventory catalog. If the user gives an inexact or unknown name, do not guess. Ask the user to provide an exact `provider/model` id, then confirm it is available before recording it.
-21. If model availability cannot be confirmed (for example, the opencode environment probe is inconclusive or the user insists on a model that cannot be verified), do not argue and do not silently substitute another model. Leave `agent.model` blank so opencode uses its default model at runtime. Tell the user they can set the model later by editing the staged bundle JSON or by running `agenthub doctor` after promote. Then continue with staging.
-22. When model choices are confirmed, delegate adaptation to `hr-adapter`.
-23. Run final readiness checks through `hr-verifier`.
-24. Present the final human checklist and require explicit approval.
-25. After approval, give the operator a structured handoff in this order:
+17. Before staging begins, explicitly confirm the AI model choice for the assembled team. Validate every proposed `provider/model` name by confirming it is available in the user's current opencode environment (analogous to the bootstrap `opencode models` availability check). Do not reason from the synced inventory catalog. If the user gives an inexact or unknown name, do not guess. Ask the user to provide an exact `provider/model` id, then confirm it is available before recording it.
+18. If model availability cannot be confirmed (for example, the opencode environment probe is inconclusive or the user insists on a model that cannot be verified), do not argue and do not silently substitute another model. Leave `agent.model` blank so opencode uses its default model at runtime. Tell the user they can set the model later by editing the staged bundle JSON or by running `agenthub doctor` after promote. Then continue with staging.
+19. When model choices are confirmed, delegate adaptation to `hr-adapter`.
+20. Before you ask `hr-verifier` to confirm any analysis, review, or staging-ready state, confirm there is a concrete file artifact to inspect. If the current output exists only in chat, write it to the appropriate on-disk deliverable first, then request verification.
+21. Run final readiness checks through `hr-verifier`.
+22. Present the final human checklist and require explicit approval.
+23. After approval, give the operator a structured handoff in this order:
    - `BUILT` - the exact staging folder path under `$HR_HOME/staging/<package-id>/`
    - `TEST HERE` - how to run `agenthub hr <profile-name>` in the current repo to test the staged team without modifying the personal home
    - `USE ELSEWHERE` - say the same staged profile can be used in any other workspace by running `agenthub hr <profile-name>` there before promote

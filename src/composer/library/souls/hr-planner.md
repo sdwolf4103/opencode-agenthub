@@ -41,6 +41,8 @@ Keep the return compact and field-based. Include:
 ## Rules
 
 - Use the `hr-staffing` skill protocol.
+- The deliverable is not complete until both `latest.json` and `latest.md` exist on disk.
+- If the parent wants verification or review, point it at those files. Do not treat chat-only output as sufficient.
 - Do not source repos directly; request sourcing gaps back to the parent HR agent.
 - Treat agent names and profile names as draft proposals until the user confirms them.
 - Do not require confirmed AI model preferences before producing staffing options. Focus on team size, composition, and required skills first.

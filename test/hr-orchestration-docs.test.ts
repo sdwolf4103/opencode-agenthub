@@ -261,3 +261,90 @@ test("README and HR Office guide present a runnable showcase HR team", async () 
 	expect(hrHomeReadme).toContain("demo-coding-team");
 	expect(hrHomeReadme).toContain("promote it with 'agenthub promote demo-coding-team'");
 });
+
+test("HR orchestration docs require synthesis and file-backed verifier handoff", async () => {
+	const [hrSoul, hrProtocol, hrPlanner, hrCto, hrAdapter, hrVerifier] = await Promise.all([
+		readRepoFile("src/composer/library/souls/hr.md"),
+		readRepoFile("src/composer/library/instructions/hr-protocol.md"),
+		readRepoFile("src/composer/library/souls/hr-planner.md"),
+		readRepoFile("src/composer/library/souls/hr-cto.md"),
+		readRepoFile("src/composer/library/souls/hr-adapter.md"),
+		readRepoFile("src/composer/library/souls/hr-verifier.md"),
+	]);
+
+	expect(hrProtocol).toContain("Synthesize before dispatch");
+	expect(hrProtocol).toContain('Never write "based on your findings"');
+	expect(hrSoul).toContain("Before you ask `hr-verifier`");
+	expect(hrSoul).toContain("concrete file artifact");
+	expect(hrPlanner).toContain("deliverable is not complete until both `latest.json` and `latest.md` exist on disk");
+	expect(hrCto).toContain("persist them to the declared output file before the parent seeks verification");
+	expect(hrAdapter).toContain("If reviewable output exists only in chat, write it to a file first");
+	expect(hrVerifier).toContain("refuse purely conversational verification requests");
+});
+
+test("demo coding team docs encode synthesis, file-artifact gating, and adversarial verification", async () => {
+	const [deliveryLead, phaseVerifier, workerCard, promotionMemo, finalChecklist] =
+		await Promise.all([
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-coding-delivery-lead.md",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-phase-verifier.md",
+			),
+			readRepoFile("src/composer/library/showcase/demo-coding-team/worker-card.json"),
+			readRepoFile("src/composer/library/showcase/demo-coding-team/promotion-memo.md"),
+			readRepoFile("src/composer/library/showcase/demo-coding-team/final-checklist.md"),
+		]);
+
+	expect(deliveryLead).toContain("## Orchestration Protocol");
+	expect(deliveryLead).toContain("Synthesize before delegate");
+	expect(deliveryLead).toContain(
+		"Before dispatching `phase-verifier`, confirm there is a concrete file artifact",
+	);
+	expect(deliveryLead).toContain("Continue vs. spawn decision table");
+	expect(phaseVerifier).toContain("reading is not verification");
+	expect(phaseVerifier).toContain("at least one adversarial probe");
+	expect(phaseVerifier).toContain("VERDICT: PASS");
+	expect(workerCard).toContain("synthesize findings before delegating follow-up work");
+	expect(promotionMemo).toContain("file-backed artifact");
+	expect(finalChecklist).toContain(
+		"Verifier handoff only happens after a concrete file artifact exists",
+	);
+});
+
+test("demo coding team docs define subagent continuity and clear subagent bundle descriptions", async () => {
+	const [deliveryLead, architectBundle, frontendBundle, mcpBundle, exploreBundle, reviewerBundle, verifierBundle] =
+		await Promise.all([
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-coding-delivery-lead.md",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-systems-architect.json",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-frontend-consultant.json",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-mcp-tooling-consultant.json",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-explore-evidence-operator.json",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-comprehensive-code-reviewer.json",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-phase-verifier.json",
+			),
+		]);
+
+	expect(deliveryLead).toContain("## Subagent Continuity Policy");
+	expect(deliveryLead).toContain("Resume the existing session");
+	expect(deliveryLead).toContain("Use whatever runtime primitive continues an existing subagent conversation");
+	expect(architectBundle).toContain("Review architecture, ADRs, and tradeoffs");
+	expect(frontendBundle).toContain("Use this specialist for Next.js UI, frontend flows, and plugin interface design");
+	expect(mcpBundle).toContain("Use this specialist for MCP integrations, backend tooling, Python, and TypeScript implementation questions");
+	expect(exploreBundle).toContain("Use this specialist for read-only exploration, behavior checks, and evidence gathering");
+	expect(reviewerBundle).toContain("Use this reviewer before implementation for a second opinion or after implementation for an independent final review");
+	expect(verifierBundle).toContain("Use this verifier only after a concrete file-backed phase artifact exists");
+});

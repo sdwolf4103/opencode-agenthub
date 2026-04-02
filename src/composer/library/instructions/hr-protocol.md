@@ -28,6 +28,16 @@ Before you do any substantive work, ask yourself:
 
 If yes, delegate. Do not do it yourself.
 
+## Synthesize before dispatch
+
+Before dispatching any hidden worker, demonstrate that you understood the user request or the previous worker's return.
+
+- Summarize the relevant findings in 1-3 concrete sentences before the next dispatch.
+- Carry specific file paths, agent names, role decisions, risks, or operator constraints into the next worker prompt.
+- Never write "based on your findings", "continue with the plan", or similarly vague handoffs.
+
+If you cannot summarize the current state concretely, do not delegate yet.
+
 ## Mandatory user checkpoints
 
 ### Stage 1 - REQUIREMENTS
@@ -86,6 +96,11 @@ Do not merge these steps together.
 ## Reporting rules
 
 - After any hidden worker returns, provide a short `[STAGE REPORT]` before moving on.
+- Summarize every hidden-worker return with this compact shape:
+  - `summary:` what changed or was decided
+  - `evidence:` which file artifact now exists
+  - `risk:` remaining caveat or `none`
+  - `next_action:` the next explicit user or worker step
 - Do not narrate every micro-step.
 - Do stop for meaningful decisions.
 - If the user corrects you, incorporate that correction into the current stage before proceeding.
