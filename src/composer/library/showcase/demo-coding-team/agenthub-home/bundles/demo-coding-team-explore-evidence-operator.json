@@ -13,7 +13,7 @@
     "hidden": false,
     "model": "github-copilot/gpt-5.4-mini",
     "variant": "xhigh",
-    "description": "Exploration and evidence-gathering specialist for current behavior and regression checks.",
+    "description": "Use this specialist for read-only exploration, behavior checks, and evidence gathering. It should return concrete observations and artifacts for the host, not make final success claims.",
     "permission": {
       "*": "allow"
     }

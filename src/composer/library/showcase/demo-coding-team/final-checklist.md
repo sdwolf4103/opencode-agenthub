@@ -8,5 +8,6 @@ READY FOR HUMAN CONFIRMATION
 - Profile `demo-coding-team` references seven bundles and defaults to `coding-delivery-lead`.
 - Bundle metadata aligns with one primary host plus six subagents.
 - Provenance is documented in the promotion memo and worker card.
+- Verifier handoff only happens after a concrete file artifact exists for the claimed phase.
 - Preferred test path: `agenthub hr demo-coding-team`.
 - Preferred promote path: `agenthub promote demo-coding-team`.

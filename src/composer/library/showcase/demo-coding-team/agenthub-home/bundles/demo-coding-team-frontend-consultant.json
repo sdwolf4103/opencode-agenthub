@@ -12,7 +12,7 @@
     "hidden": false,
     "model": "github-copilot/gpt-5.4",
     "variant": "xhigh",
-    "description": "Frontend and web-flow consultant for Next.js and plugin UI work.",
+    "description": "Use this specialist for Next.js UI, frontend flows, and plugin interface design. It should return concrete implementation or review guidance, not act as the primary host.",
     "permission": {
       "*": "allow"
     }

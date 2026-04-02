@@ -25,6 +25,6 @@
     "team_namespace": "demo-coding-team",
     "seat": "primary",
     "advisory_model": "openai/gpt-5.4 high",
-    "workflow_gate": "send every completed phase to phase-verifier before claiming success"
+    "workflow_gate": "synthesize findings, persist file-backed phase artifacts, then send every completed phase to phase-verifier before claiming success"
   }
 }

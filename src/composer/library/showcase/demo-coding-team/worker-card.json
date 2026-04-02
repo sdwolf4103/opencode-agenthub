@@ -10,6 +10,7 @@
   "default_agent": "demo-coding-team-coding-delivery-lead",
   "team_workflow": [
     "Host can consult architect and specialists during planning and build work.",
+    "Host must synthesize findings before delegating follow-up work and persist plan/analysis artifacts before verifier handoff.",
     "Every completed phase must go through the phase verifier before success can be claimed.",
     "Comprehensive code reviewer can be called at the beginning or end of a work cycle.",
     "Git discipline is anchored in the host via the using-git-worktrees skill."

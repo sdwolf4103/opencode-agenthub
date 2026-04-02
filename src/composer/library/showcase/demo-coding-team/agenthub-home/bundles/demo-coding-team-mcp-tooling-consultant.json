@@ -13,7 +13,7 @@
     "hidden": false,
     "model": "github-copilot/claude-opus-4.6",
     "variant": "thinking",
-    "description": "MCP, tooling, backend integration, Python, and TypeScript consultant.",
+    "description": "Use this specialist for MCP integrations, backend tooling, Python, and TypeScript implementation questions. It should return targeted integration guidance or code, not replace the delivery host.",
     "permission": {
       "*": "allow"
     }

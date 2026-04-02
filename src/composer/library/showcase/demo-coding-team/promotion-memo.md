@@ -16,10 +16,17 @@ Stage a public demo coding team for daily product delivery across Next.js, backe
 ## Encoded Workflow
 
 - The host plans and codes, and can consult the architect or any specialist.
+- The host synthesizes findings before delegating follow-up work.
+- Plans or analysis must be saved to files before the phase verifier is asked to review them.
 - The architect handles ADRs, design review, tradeoffs, and system boundaries rather than day-to-day implementation.
 - The code reviewer can be called either before implementation starts or after implementation completes.
 - Every completed phase must be sent to `demo-coding-team-phase-verifier` before the host claims success.
 - Git discipline stays with the host through `obra-superpowers-skills-using-git-worktrees-skill`.
+
+## Verifier Preconditions
+
+- Every verifier handoff must be backed by a file-backed artifact: changed source files, saved plan markdown, saved analysis note, checklist, or equivalent on-disk evidence.
+- Chat-only analysis is not a review surface.
 
 ## Source Basis / Provenance
 

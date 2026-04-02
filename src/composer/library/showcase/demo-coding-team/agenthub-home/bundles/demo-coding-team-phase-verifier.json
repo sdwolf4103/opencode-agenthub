@@ -13,7 +13,7 @@
     "hidden": false,
     "model": "github-copilot/claude-sonnet-4.6",
     "variant": "thinking",
-    "description": "Mandatory phase gate verifier for the demo coding team.",
+    "description": "Use this verifier only after a concrete file-backed phase artifact exists. It returns an independent PASS, FAIL, or PARTIAL verdict and must not modify project files.",
     "permission": {
       "*": "allow"
     }
@@ -23,6 +23,6 @@
     "seat": "subagent",
     "source_basis": "agency-agents Reality Checker",
     "advisory_model": "github-copilot/claude-sonnet-4.6 thinking",
-    "workflow_gate": "required after each completed phase"
+    "workflow_gate": "verify only after concrete file-backed phase artifacts exist; run adversarial evidence-based checks before issuing a verdict"
   }
 }
