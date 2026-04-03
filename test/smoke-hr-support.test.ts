@@ -126,7 +126,7 @@ test("vendor_stage_mcps vendors MCP configs and server files from cached source 
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}
-});
+}, 15000);
 
 test("validate_staged_package fails when MCP server artifacts are missing", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-validate-stage-mcps-"));

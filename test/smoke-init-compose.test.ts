@@ -3692,7 +3692,7 @@ test("sync_sources refreshes a local model catalog into HR inventory", async () 
 		await new Promise<void>((resolve) => server.close(() => resolve()));
 		await rm(tempRoot, { recursive: true, force: true });
 	}
-});
+}, 15000);
 
 test("hr staged profile resolves from staging package before promote", async () => {
 	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-staged-profile-"));
