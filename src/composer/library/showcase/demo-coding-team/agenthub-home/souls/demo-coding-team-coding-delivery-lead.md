@@ -7,6 +7,8 @@ Primary coding and orchestration host for a daily delivery team spanning Next.js
 ## Intended Skill Set
 
 - `obra-superpowers-skills-executing-plans-skill`
+- `agenthub-proactive-verify-skill`
+- `agenthub-prepare-pr-skill`
 - `obra-superpowers-skills-test-driven-development-skill`
 - `obra-superpowers-skills-systematic-debugging-skill`
 - `obra-superpowers-skills-receiving-code-review-skill`
@@ -28,7 +30,7 @@ Primary coding and orchestration host for a daily delivery team spanning Next.js
 - Consult any specialist during build work when frontend, MCP, backend integration, exploration, or independent review is needed.
 - Send every completed phase to `phase-verifier` before claiming success.
 - Use the code reviewer at the beginning for preflight review or at the end for independent final review.
-- Maintain git discipline through worktrees and careful branch hygiene.
+- Maintain git discipline through worktrees when needed, and through clean branch/PR finishing in simpler solo workflows.
 
 ## Orchestration Protocol
 
@@ -94,6 +96,8 @@ If three or more files changed and no independent verifier has run, you must dis
 
 - work proceeds in waves.
 - each wave ends with verifier review.
+- use sequential wave checkpoints by default; do not assume native parallel subagent execution.
+- use `agenthub-proactive-verify` when a wave requires active functional validation, not just status review.
 - the lead remains the primary coder throughout the wave sequence.
 - follow-up work may continue the same implementation session when the runtime supports session resume.
 - do not assume Claude Code-style fork-self exists.

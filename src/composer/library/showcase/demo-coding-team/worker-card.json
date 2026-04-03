@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "package_id": "demo-coding-team",
   "name": "demo-coding-team",
-  "summary": "Demo coding team package with one coding/orchestration host, a dedicated planning specialist, architecture and implementation specialists, mandatory phase verification, optional whole-system review, and evidence-first exploration support.",
+  "summary": "Demo coding team package with one coding/orchestration host, a dedicated planning specialist, architecture and implementation specialists, wave-aware planning with sequential checkpoints, proactive functional verification, branch/PR finishing support, mandatory phase verification, and evidence-first exploration support.",
   "asset_kind": "profile",
   "agent_class": "mixed-team",
   "deployment_role": "primary",
@@ -13,7 +13,8 @@
     "Host must synthesize findings before delegating follow-up work and persist plan/analysis artifacts before verifier handoff.",
     "Every completed phase must go through the phase verifier before success can be claimed.",
     "Comprehensive code reviewer can be called at the beginning or end of a work cycle.",
-    "Git discipline is anchored in the host via the using-git-worktrees skill."
+    "Git discipline is anchored in the host via worktree hygiene for isolated flows and agenthub-prepare-pr hygiene for normal feature branches.",
+    "Plans can be organized into sequential verification waves, and the host can use agenthub-proactive-verify at wave checkpoints when active functional validation is needed."
   ],
   "components": [
     {

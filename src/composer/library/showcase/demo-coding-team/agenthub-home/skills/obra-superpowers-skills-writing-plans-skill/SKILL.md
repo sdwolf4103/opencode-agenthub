@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** Prefer a dedicated worktree when isolated workspace setup is useful. A normal feature branch is acceptable when the workflow is simple and does not need worktree isolation.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -60,6 +60,54 @@ This structure informs the task decomposition. Each task should produce self-con
 ---
 ```
 
+## Wave Structure (Optional)
+
+For plans with more than ~4 tasks, group tasks into waves. Each wave is a logical unit of work that produces a testable, committable state. Waves execute sequentially. Between waves, verification runs and the user/system can review before proceeding.
+
+**When to use waves:**
+- Plan has 5+ tasks
+- Natural verification boundaries exist
+- Work has dependencies between groups of tasks
+
+**When NOT to use waves:**
+- Plan has ≤4 tasks
+- All tasks are independent and no meaningful checkpoint is needed
+
+**Important:** Wave structure is a planning convention, not a promise of native runtime parallelism. In this package, waves are sequenced checkpoints first. Parallel execution is a future enhancement, not a current assumption.
+
+**Wave syntax in plans:**
+
+```markdown
+## Wave 1 — [Wave Name]
+
+### Task 1: [Component Name]
+...
+
+### Wave 1 verification checkpoint
+
+- [ ] **Step 1: Run verification**
+
+Run: `[test command]`
+Expected: PASS
+
+- [ ] **Step 2: Review wave output before proceeding**
+
+Confirm: [what must be true after this wave]
+
+- [ ] **Step 3: Commit wave**
+
+```bash
+git add -A
+git commit -m "feat: [wave summary]"
+```
+```
+
+**Rules:**
+- Every wave ends with a verification checkpoint
+- A failing checkpoint blocks the next wave
+- Tasks within a wave execute sequentially
+- Keep task numbering global across the plan
+
 ## Task Structure
 
 ````markdown
@@ -103,6 +151,8 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+**Note:** When using waves, tasks are numbered globally across the plan (Task 1, Task 2, ...), not restarted per wave.
+
 ## No Placeholders
 
 Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
@@ -129,6 +179,8 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
+**4. Wave coherence (if using waves):** Does each wave end in a state where tests pass and the codebase is committable? Can Wave N+1 start cleanly from Wave N's output? Are wave checkpoints specific enough that a verifier knows what to check?
+
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
 ## Execution Handoff
@@ -149,4 +201,4 @@ After saving the plan, offer execution choice:
 
 **If Inline Execution chosen:**
 - **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
-- Batch execution with checkpoints for review
+- Batch execution with checkpoints for review, including wave checkpoints when the plan uses wave structure

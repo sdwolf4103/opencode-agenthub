@@ -7,6 +7,7 @@ READY FOR HUMAN CONFIRMATION
 - Package includes `handoff.json`, `worker-card.json`, `promotion-memo.md`, all referenced bundles, all referenced souls, and all referenced vendored skills.
 - Profile `demo-coding-team` references seven bundles and defaults to `coding-delivery-lead`.
 - Bundle metadata aligns with one primary host plus six subagents.
+- Coding-delivery-lead bundle includes `agenthub-proactive-verify` and `agenthub-prepare-pr` alongside the existing execution and git hygiene skills.
 - No MCP consultant bundle references remain.
 - Canonical explore naming is used throughout the package.
 - Non-coding specialist bundles explicitly harden permissions; verifier intentionally retains bash for evidence commands while edit/write remain denied.

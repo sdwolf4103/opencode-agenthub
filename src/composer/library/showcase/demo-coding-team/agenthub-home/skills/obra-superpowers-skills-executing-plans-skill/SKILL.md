@@ -29,12 +29,31 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
+**Wave-aware execution:** If the plan uses wave structure (sections headed `## Wave N — ...`), treat wave boundaries as mandatory checkpoints:
+
+1. Execute all tasks within the current wave sequentially
+2. At a `Wave N verification checkpoint` section:
+   - Run every verification command listed in the checkpoint
+   - If any verification fails: STOP and report the failure. Do not proceed to the next wave.
+   - If all verification passes: report wave completion before continuing.
+   - Prefer active verification over mere status reporting. If `agenthub-proactive-verify` is available and the checkpoint calls for functional validation, announce: "I'm using the agenthub-proactive-verify skill to validate this wave before proceeding." Then run the checkpoint commands.
+3. If the plan does not use wave structure, execute tasks as a flat sequence.
+
+**Wave checkpoint is a gate, not a suggestion.** A failing checkpoint blocks all subsequent waves.
+
 ### Step 3: Complete Development
 
 After all tasks complete and verified:
+
+**If working in a git worktree:**
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
 - **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
 - Follow that skill to verify tests, present options, execute choice
+
+**If working on a simple feature branch (no worktree):**
+- Announce: "I'm using the agenthub-prepare-pr skill to finish this branch."
+- **REQUIRED SUB-SKILL:** Use agenthub-prepare-pr
+- Follow that skill to verify, clean up commits, and merge locally or create a PR
 
 ## When to Stop and Ask for Help
 
@@ -65,6 +84,10 @@ After all tasks complete and verified:
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
 - **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+- **agenthub-prepare-pr** - Complete development after all tasks when using a normal feature branch
+
+**Optional workflow skills:**
+- **superpowers:using-git-worktrees** - Set up isolated workspace before starting when worktree isolation is useful
+- **superpowers:finishing-a-development-branch** - Complete development after all tasks in a worktree-based workflow
+- **agenthub-proactive-verify** - Active testing workflow for wave checkpoints and final validation

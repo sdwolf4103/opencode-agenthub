@@ -22,7 +22,8 @@ Stage a public demo coding team for daily product delivery across Next.js, backe
 - The code reviewer can be called either before implementation starts or after implementation completes.
 - Every completed phase must be sent to `demo-coding-team-phase-verifier` before the host claims success.
 - The phase verifier intentionally keeps `bash` access for read-only evidence commands while `edit` and `write` stay denied.
-- Git discipline stays with the host through `obra-superpowers-skills-using-git-worktrees-skill`.
+- Git discipline stays with the host through `obra-superpowers-skills-using-git-worktrees-skill` for isolated flows and `agenthub-prepare-pr-skill` for normal feature-branch finishing.
+- Plans may be written with optional wave checkpoints, and active functional verification can be handled through `agenthub-proactive-verify-skill` at those boundaries.
 
 ## Verifier Preconditions
 
@@ -56,7 +57,7 @@ Excluded from vendoring:
 Roles that originally depended on those skills are re-mapped to the approved
 lightweight skill set in this package. Their soul documents note the original
 intent where useful, and the full skills can still be added independently later.
-The seven-role team shape now uses one primary delivery lead plus six subagents: plan, systems-architect, frontend-consultant, phase-verifier, explore, and comprehensive-code-reviewer.
+The seven-role team shape now uses one primary delivery lead plus six subagents: plan, systems-architect, frontend-consultant, phase-verifier, explore, and comprehensive-code-reviewer. The lead now carries two additional lightweight Agent Hub skills: `agenthub-proactive-verify` and `agenthub-prepare-pr`.
 
 ## Advisory Model Defaults
 

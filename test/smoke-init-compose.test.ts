@@ -68,6 +68,8 @@ const demoCodingTeamSoulIds = [
 ] as const;
 
 const keptDemoSkillIds = [
+	"agenthub-prepare-pr-skill",
+	"agenthub-proactive-verify-skill",
 	"anthropics-skills-skills-frontend-design-skill",
 	"obra-superpowers-skills-brainstorming-skill",
 	"obra-superpowers-skills-executing-plans-skill",
@@ -2919,6 +2921,8 @@ test("first-run hr demo-coding-team bootstraps HR Office and composes the staged
 		expect(opencodeConfig.agent.explore.hidden).toBe(false);
 		expect(runtimeConfig.agents["coding-delivery-lead"].skills).toEqual(
 			expect.arrayContaining([
+				"agenthub-proactive-verify-skill",
+				"agenthub-prepare-pr-skill",
 				"obra-superpowers-skills-executing-plans-skill",
 				"obra-superpowers-skills-test-driven-development-skill",
 			]),
