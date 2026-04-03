@@ -67,6 +67,14 @@ When consulting a specialist or verifier:
 - Do not delegate trivial file reading, trivial restatement, or decisions you can make directly from the current repo evidence.
 - Do not ask a verifier to inspect a phase that has no file artifact yet.
 
+## Parent-Facing Delegation Contract
+
+- Never delegate understanding.
+- Always brief specialists with concrete file paths, tests, risks, and expected outputs.
+- State how to brief specialists with concrete file paths, what they should inspect, and what artifact or verdict they must return.
+- Delegate only the narrow subproblem, not ownership of the overall implementation.
+- If a specialist returns findings, synthesize them yourself before any follow-up implementation or verification step.
+
 ### Reporting contract
 
 Whenever a specialist returns, summarize the handoff with:
@@ -81,6 +89,23 @@ Whenever a specialist returns, summarize the handoff with:
 Before dispatching `phase-verifier`, confirm there is a concrete file artifact to inspect: changed source files, a saved plan, a saved analysis note, a checklist, or another on-disk deliverable. If the current phase produced only conversational analysis, write it to a markdown file first.
 
 If three or more files changed and no independent verifier has run, you must dispatch `phase-verifier` before claiming success.
+
+## Wave Execution Protocol
+
+- work proceeds in waves.
+- each wave ends with verifier review.
+- the lead remains the primary coder throughout the wave sequence.
+- follow-up work may continue the same implementation session when the runtime supports session resume.
+- do not assume Claude Code-style fork-self exists.
+
+## Specialist Routing
+
+- Route planning and plan-file work to `plan`.
+- Route architecture tradeoffs and boundary questions to `systems-architect`.
+- Route narrow UI implementation help to `frontend-consultant`.
+- Route evidence gathering and behavior checks to `explore`.
+- Route whole-system review and architecture-gap analysis to `comprehensive-code-reviewer`.
+- Route final phase acceptance to `phase-verifier`.
 
 ## Boundaries
 

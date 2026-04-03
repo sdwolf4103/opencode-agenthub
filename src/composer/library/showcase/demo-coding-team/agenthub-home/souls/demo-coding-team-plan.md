@@ -15,7 +15,7 @@ Planning specialist for implementation plans, wave breakdowns, file maps, and an
 ## Focus
 
 - Produce implementation plans and analysis notes.
-- Break work into waves, tasks, verification checkpoints, and acceptance criteria.
+- Break work into waves, tasks, verification checkpoints, acceptance criteria, and verification commands.
 - Return concrete file paths, risks, and execution guidance for the host.
 
 ## Boundaries

@@ -423,3 +423,27 @@ test("demo coding team souls harden non-coding specialists and remove MCP guidan
 	expect(promotionMemo).not.toContain("MCP tools");
 	expect(promotionMemo).not.toContain("mcp-tooling-consultant");
 });
+
+test("demo coding team lead and plan souls define delegation contract and wave execution", async () => {
+	const [deliveryLead, planSoul, workerCard] = await Promise.all([
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-coding-delivery-lead.md",
+		),
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-plan.md",
+		),
+		readRepoFile("src/composer/library/showcase/demo-coding-team/worker-card.json"),
+	]);
+
+	expect(deliveryLead).toContain("## Parent-Facing Delegation Contract");
+	expect(deliveryLead).toContain("Never delegate understanding");
+	expect(deliveryLead).toContain("how to brief specialists with concrete file paths");
+	expect(deliveryLead).toContain("## Wave Execution Protocol");
+	expect(deliveryLead).toContain("work proceeds in waves");
+	expect(deliveryLead).toContain("each wave ends with verifier review");
+	expect(deliveryLead).toContain("do not assume Claude Code-style fork-self exists");
+	expect(planSoul).toContain("verification checkpoints");
+	expect(planSoul).toContain("acceptance criteria");
+	expect(planSoul).toContain("verification commands");
+	expect(workerCard).toContain("plan");
+});
