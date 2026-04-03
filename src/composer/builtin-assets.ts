@@ -31,11 +31,18 @@ const codingLibraryFiles = [
 	"bundles/explore.json",
 	"bundles/plan.json",
 	"bundles/build.json",
+	"instructions/authoring-lane-guide.md",
 	"profiles/auto.json",
 	"souls/auto.md",
 	"souls/explore.md",
 	"souls/plan.md",
 	"souls/build.md",
+];
+
+const codingSkillDirectories = [
+	"write-skill",
+	"write-agent",
+	"refine-hub-asset",
 ];
 
 const hrLibraryFiles = [
@@ -121,7 +128,7 @@ type InstallMode = SetupMode | "hr-office";
 
 const manifestScopeForMode = (mode: InstallMode): string[] => {
 	if (mode === "auto") {
-		return codingLibraryFiles;
+		return [...codingLibraryFiles, ...codingSkillDirectories.map((name) => `skills/${name}`)];
 	}
 	if (mode === "hr-office") {
 		return [
@@ -165,6 +172,17 @@ export const getManagedCodingHrHubAssetSpecs = (
 	mode: InstallMode,
 ): ManagedAssetSpec[] => {
 	const specs = getManagedHubAssetSpecs(targetRoot, mode);
+	if (mode === "auto") {
+		return [
+			...specs,
+			...codingSkillDirectories.map((name) => ({
+				manifestKey: `skills/${name}`,
+				source: path.join(builtInSkillsRoot, name),
+				target: path.join(targetRoot, "skills", name),
+				recursive: true,
+			})),
+		];
+	}
 	if (mode !== "hr-office") return specs;
 
 	return [
