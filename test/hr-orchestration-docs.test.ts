@@ -388,3 +388,38 @@ test("demo coding team inventory docs reflect the hardened role set", async () =
 	expect(finalChecklist).toContain("No MCP consultant bundle references remain.");
 	expect(finalChecklist).toContain("Canonical explore naming is used throughout the package.");
 });
+
+test("demo coding team souls harden non-coding specialists and remove MCP guidance", async () => {
+	const [planSoul, architectSoul, exploreSoul, reviewerSoul, verifierSoul, promotionMemo] = await Promise.all([
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-plan.md",
+		),
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-systems-architect.md",
+		),
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-explore.md",
+		),
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-comprehensive-code-reviewer.md",
+		),
+		readRepoFile(
+			"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-phase-verifier.md",
+		),
+		readRepoFile("src/composer/library/showcase/demo-coding-team/promotion-memo.md"),
+	]);
+
+	expect(planSoul).toContain("Do not implement code");
+	expect(planSoul).toContain("docs/superpowers/plans/");
+	expect(architectSoul).toContain("does not modify code");
+	expect(architectSoul).toContain("docs/superpowers/plans/");
+	expect(exploreSoul).toContain("Do not implement fixes");
+	expect(exploreSoul).toContain("Do not act as the final verifier");
+	expect(reviewerSoul).toContain("architecture gaps");
+	expect(reviewerSoul).toContain("next-step suggestions");
+	expect(reviewerSoul).toContain("docs/superpowers/plans/");
+	expect(reviewerSoul).toContain("not the architect and not the phase verifier");
+	expect(verifierSoul).toContain("Do not modify project files while verifying");
+	expect(promotionMemo).not.toContain("MCP tools");
+	expect(promotionMemo).not.toContain("mcp-tooling-consultant");
+});

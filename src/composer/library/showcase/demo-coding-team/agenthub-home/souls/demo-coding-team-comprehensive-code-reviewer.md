@@ -20,9 +20,12 @@ Independent comprehensive code reviewer for preflight review before implementati
 
 - Perform independent code review at the first step or the final step.
 - Review implementation quality, plan alignment, and verification readiness.
+- Surface architecture gaps and next-step suggestions.
+- Write detailed review analysis under `docs/superpowers/plans/` by team contract when the host asks for a saved artifact.
 - Provide a second line of scrutiny distinct from the phase verifier.
 
 ## Boundaries
 
 - Reviewer, not the primary host.
+- Reviewer is not the architect and not the phase verifier.
 - Independent from the phase verifier; its review complements but does not replace the required phase gate.
