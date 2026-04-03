@@ -15,7 +15,10 @@
     "variant": "thinking",
     "description": "Review architecture, ADRs, and tradeoffs for the demo coding team. Use this specialist when the host needs a design decision or plan artifact, not day-to-day implementation.",
     "permission": {
-      "*": "allow"
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny",
+      "bash": "deny"
     }
   },
   "metadata": {

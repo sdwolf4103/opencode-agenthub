@@ -1,0 +1,29 @@
+{
+  "name": "demo-coding-team-plan",
+  "runtime": "native",
+  "soul": "demo-coding-team-plan",
+  "skills": [
+    "obra-superpowers-skills-writing-plans-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "plan",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/claude-opus-4.6",
+    "variant": "thinking",
+    "description": "Use this specialist to produce implementation plans and analysis artifacts. It is non-coding and may only target docs/superpowers/plans/ by contract, not by runtime path enforcement.",
+    "permission": {
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny",
+      "bash": "deny"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "claude-code-inspired plan specialist",
+    "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+  }
+}

@@ -1,13 +1,13 @@
 {
   "name": "demo-coding-team",
-  "description": "Demo coding team for daily product delivery across Next.js, backend, MCP, Python, plugin work, git hygiene, and mandatory phase verification.",
+  "description": "Demo coding team for daily product delivery across Next.js, backend, Python, plugin work, git hygiene, wave-based verification, and mandatory phase verification.",
   "bundles": [
     "demo-coding-team-coding-delivery-lead",
+    "demo-coding-team-plan",
     "demo-coding-team-systems-architect",
     "demo-coding-team-frontend-consultant",
-    "demo-coding-team-mcp-tooling-consultant",
     "demo-coding-team-phase-verifier",
-    "demo-coding-team-explore-evidence-operator",
+    "demo-coding-team-explore",
     "demo-coding-team-comprehensive-code-reviewer"
   ],
   "defaultAgent": "coding-delivery-lead",

@@ -49,21 +49,21 @@ const pathExists = async (target: string) => {
 
 const demoCodingTeamBundleIds = [
 	"demo-coding-team-coding-delivery-lead",
+	"demo-coding-team-plan",
 	"demo-coding-team-systems-architect",
 	"demo-coding-team-frontend-consultant",
-	"demo-coding-team-mcp-tooling-consultant",
 	"demo-coding-team-phase-verifier",
-	"demo-coding-team-explore-evidence-operator",
+	"demo-coding-team-explore",
 	"demo-coding-team-comprehensive-code-reviewer",
 ] as const;
 
 const demoCodingTeamSoulIds = [
 	"demo-coding-team-coding-delivery-lead",
+	"demo-coding-team-plan",
 	"demo-coding-team-systems-architect",
 	"demo-coding-team-frontend-consultant",
-	"demo-coding-team-mcp-tooling-consultant",
 	"demo-coding-team-phase-verifier",
-	"demo-coding-team-explore-evidence-operator",
+	"demo-coding-team-explore",
 	"demo-coding-team-comprehensive-code-reviewer",
 ] as const;
 
@@ -107,11 +107,11 @@ const expectDemoShowcaseSkillSubset = async (skillsRoot: string) => {
 
 const demoShowcaseAgentNames = [
 	"coding-delivery-lead",
+	"plan",
 	"systems-architect",
 	"frontend-consultant",
-	"mcp-tooling-consultant",
 	"phase-verifier",
-	"explore-evidence-operator",
+	"explore",
 	"comprehensive-code-reviewer",
 ] as const;
 
@@ -2892,7 +2892,7 @@ test("first-run hr demo-coding-team bootstraps HR Office and composes the staged
 		expect(Object.keys(opencodeConfig.agent)).toEqual(
 			expect.arrayContaining([...demoShowcaseAgentNames, "explore"]),
 		);
-		expect(opencodeConfig.agent.explore.hidden).toBe(true);
+		expect(opencodeConfig.agent.explore.hidden).toBe(false);
 		expect(runtimeConfig.agents["coding-delivery-lead"].skills).toEqual(
 			expect.arrayContaining([
 				"obra-superpowers-skills-executing-plans-skill",
@@ -2905,13 +2905,12 @@ test("first-run hr demo-coding-team bootstraps HR Office and composes the staged
 				"obra-superpowers-skills-brainstorming-skill",
 			]),
 		);
-		expect(runtimeConfig.agents["mcp-tooling-consultant"].skills).toEqual(
+		expect(runtimeConfig.agents["plan"].skills).toEqual(
 			expect.arrayContaining([
-				"obra-superpowers-skills-systematic-debugging-skill",
-				"obra-superpowers-skills-brainstorming-skill",
+				"obra-superpowers-skills-writing-plans-skill",
 			]),
 		);
-		expect(runtimeConfig.agents["explore-evidence-operator"].skills).toEqual(
+		expect(runtimeConfig.agents["explore"].skills).toEqual(
 			expect.arrayContaining([
 				"obra-superpowers-skills-systematic-debugging-skill",
 				"obra-superpowers-skills-verification-before-completion-skill",
@@ -2929,10 +2928,10 @@ test("first-run hr demo-coding-team bootstraps HR Office and composes the staged
 			]),
 		);
 		const demoSkillSets = [
+			runtimeConfig.agents["plan"].skills,
 			runtimeConfig.agents["systems-architect"].skills,
 			runtimeConfig.agents["frontend-consultant"].skills,
-			runtimeConfig.agents["mcp-tooling-consultant"].skills,
-			runtimeConfig.agents["explore-evidence-operator"].skills,
+			runtimeConfig.agents["explore"].skills,
 		].flat();
 		expect(demoSkillSets).not.toContain("garrytan-gstack-browse-skill");
 		expect(demoSkillSets).not.toContain("garrytan-gstack-plan-eng-review-skill");
@@ -4670,11 +4669,11 @@ test("demo showcase worker-card advisory_model metadata stays aligned with bundl
 
 	for (const [componentId, bundleFile] of [
 		["coding-delivery-lead", "demo-coding-team-coding-delivery-lead.json"],
+		["plan", "demo-coding-team-plan.json"],
 		["systems-architect", "demo-coding-team-systems-architect.json"],
 		["frontend-consultant", "demo-coding-team-frontend-consultant.json"],
-		["mcp-tooling-consultant", "demo-coding-team-mcp-tooling-consultant.json"],
 		["phase-verifier", "demo-coding-team-phase-verifier.json"],
-		["explore-evidence-operator", "demo-coding-team-explore-evidence-operator.json"],
+		["explore", "demo-coding-team-explore.json"],
 		["comprehensive-code-reviewer", "demo-coding-team-comprehensive-code-reviewer.json"],
 	] as const) {
 		const bundle = JSON.parse(

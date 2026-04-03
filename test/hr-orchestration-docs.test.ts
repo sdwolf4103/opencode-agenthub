@@ -313,10 +313,13 @@ test("demo coding team docs encode synthesis, file-artifact gating, and adversar
 });
 
 test("demo coding team docs define subagent continuity and clear subagent bundle descriptions", async () => {
-	const [deliveryLead, architectBundle, frontendBundle, mcpBundle, exploreBundle, reviewerBundle, verifierBundle] =
+	const [deliveryLead, profile, architectBundle, frontendBundle, planBundle, exploreBundle, reviewerBundle, verifierBundle] =
 		await Promise.all([
 			readRepoFile(
 				"src/composer/library/showcase/demo-coding-team/agenthub-home/souls/demo-coding-team-coding-delivery-lead.md",
+			),
+			readRepoFile(
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/profiles/demo-coding-team.json",
 			),
 			readRepoFile(
 				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-systems-architect.json",
@@ -325,10 +328,10 @@ test("demo coding team docs define subagent continuity and clear subagent bundle
 				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-frontend-consultant.json",
 			),
 			readRepoFile(
-				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-mcp-tooling-consultant.json",
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-plan.json",
 			),
 			readRepoFile(
-				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-explore-evidence-operator.json",
+				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-explore.json",
 			),
 			readRepoFile(
 				"src/composer/library/showcase/demo-coding-team/agenthub-home/bundles/demo-coding-team-comprehensive-code-reviewer.json",
@@ -341,10 +344,47 @@ test("demo coding team docs define subagent continuity and clear subagent bundle
 	expect(deliveryLead).toContain("## Subagent Continuity Policy");
 	expect(deliveryLead).toContain("Resume the existing session");
 	expect(deliveryLead).toContain("Use whatever runtime primitive continues an existing subagent conversation");
+	expect(profile).toContain('"demo-coding-team-plan"');
+	expect(profile).not.toContain('"demo-coding-team-mcp-tooling-consultant"');
+	expect(profile).toContain('"demo-coding-team-explore"');
+	expect(profile).not.toContain('"demo-coding-team-explore-evidence-operator"');
 	expect(architectBundle).toContain("Review architecture, ADRs, and tradeoffs");
+	expect(architectBundle).toContain('"edit": "deny"');
+	expect(architectBundle).toContain('"write": "deny"');
+	expect(architectBundle).toContain('"bash": "deny"');
 	expect(frontendBundle).toContain("Use this specialist for Next.js UI, frontend flows, and plugin interface design");
-	expect(mcpBundle).toContain("Use this specialist for MCP integrations, backend tooling, Python, and TypeScript implementation questions");
-	expect(exploreBundle).toContain("Use this specialist for read-only exploration, behavior checks, and evidence gathering");
+	expect(planBundle).toContain('"name": "demo-coding-team-plan"');
+	expect(planBundle).toContain('"name": "plan"');
+	expect(planBundle).toContain('"edit": "deny"');
+	expect(planBundle).toContain('"write": "deny"');
+	expect(planBundle).toContain('"bash": "deny"');
+	expect(exploreBundle).toContain('"name": "demo-coding-team-explore"');
+	expect(exploreBundle).toContain('"name": "explore"');
+	expect(exploreBundle).toContain('"edit": "deny"');
+	expect(exploreBundle).toContain('"write": "deny"');
+	expect(exploreBundle).toContain('"bash": "deny"');
 	expect(reviewerBundle).toContain("Use this reviewer before implementation for a second opinion or after implementation for an independent final review");
+	expect(reviewerBundle).toContain('"edit": "deny"');
+	expect(reviewerBundle).toContain('"write": "deny"');
+	expect(reviewerBundle).toContain('"bash": "deny"');
 	expect(verifierBundle).toContain("Use this verifier only after a concrete file-backed phase artifact exists");
+	expect(verifierBundle).toContain('"edit": "deny"');
+	expect(verifierBundle).toContain('"write": "deny"');
+});
+
+test("demo coding team inventory docs reflect the hardened role set", async () => {
+	const [workerCard, promotionMemo, finalChecklist] = await Promise.all([
+		readRepoFile("src/composer/library/showcase/demo-coding-team/worker-card.json"),
+		readRepoFile("src/composer/library/showcase/demo-coding-team/promotion-memo.md"),
+		readRepoFile("src/composer/library/showcase/demo-coding-team/final-checklist.md"),
+	]);
+
+	expect(workerCard).toContain('"id": "plan"');
+	expect(workerCard).not.toContain('"id": "mcp-tooling-consultant"');
+	expect(workerCard).toContain('"id": "explore"');
+	expect(workerCard).not.toContain('"id": "explore-evidence-operator"');
+	expect(promotionMemo).toContain("one primary delivery lead plus six subagents: plan");
+	expect(promotionMemo).not.toContain("mcp-tooling-consultant");
+	expect(finalChecklist).toContain("No MCP consultant bundle references remain.");
+	expect(finalChecklist).toContain("Canonical explore naming is used throughout the package.");
 });

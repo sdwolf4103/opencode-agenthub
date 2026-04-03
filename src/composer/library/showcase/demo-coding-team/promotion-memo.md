@@ -2,7 +2,7 @@
 
 ## Intent
 
-Stage a public demo coding team for daily product delivery across Next.js, backend, OpenCode plugin work, MCP tools, Python, and disciplined git execution.
+Stage a public demo coding team for daily product delivery across Next.js, backend, OpenCode plugin work, Python, disciplined git execution, and wave-based verification.
 
 ## Packaged Profile
 
@@ -15,12 +15,13 @@ Stage a public demo coding team for daily product delivery across Next.js, backe
 
 ## Encoded Workflow
 
-- The host plans and codes, and can consult the architect or any specialist.
+- The host plans and codes, and can consult the plan specialist, architect, or any other specialist.
 - The host synthesizes findings before delegating follow-up work.
 - Plans or analysis must be saved to files before the phase verifier is asked to review them.
 - The architect handles ADRs, design review, tradeoffs, and system boundaries rather than day-to-day implementation.
 - The code reviewer can be called either before implementation starts or after implementation completes.
 - Every completed phase must be sent to `demo-coding-team-phase-verifier` before the host claims success.
+- The phase verifier intentionally keeps `bash` access for read-only evidence commands while `edit` and `write` stay denied.
 - Git discipline stays with the host through `obra-superpowers-skills-using-git-worktrees-skill`.
 
 ## Verifier Preconditions
@@ -33,9 +34,9 @@ Stage a public demo coding team for daily product delivery across Next.js, backe
 - `coding-delivery-lead` — original role built during HR assembly
 - `systems-architect` — adapted from `msitarzewski/agency-agents` Software Architect
 - `frontend-consultant` — adapted from `msitarzewski/agency-agents` Frontend Developer
-- `mcp-tooling-consultant` — adapted from `msitarzewski/agency-agents` MCP Builder
+- `plan` — Claude Code-inspired planning specialist adapted into Agent Hub package form
 - `phase-verifier` — adapted from `msitarzewski/agency-agents` Reality Checker
-- `explore-evidence-operator` — adapted from `msitarzewski/agency-agents` Evidence Collector
+- `explore` — adapted from `msitarzewski/agency-agents` Evidence Collector
 - `comprehensive-code-reviewer` — adapted from `obra/superpowers` code reviewer role
 - Supporting vendored skills sourced from `obra/superpowers` and `anthropics/skills`
 
@@ -55,8 +56,7 @@ Excluded from vendoring:
 Roles that originally depended on those skills are re-mapped to the approved
 lightweight skill set in this package. Their soul documents note the original
 intent where useful, and the full skills can still be added independently later.
-The seven-role team shape, workflow gates, and public repo provenance are
-preserved.
+The seven-role team shape now uses one primary delivery lead plus six subagents: plan, systems-architect, frontend-consultant, phase-verifier, explore, and comprehensive-code-reviewer.
 
 ## Advisory Model Defaults
 

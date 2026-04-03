@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "package_id": "demo-coding-team",
   "name": "demo-coding-team",
-  "summary": "Demo coding team package with one coding/orchestration host, architecture and implementation specialists, mandatory phase verification, optional preflight/final code review, and a lightweight vendored skill subset for evidence-first exploration support.",
+  "summary": "Demo coding team package with one coding/orchestration host, a dedicated planning specialist, architecture and implementation specialists, mandatory phase verification, optional whole-system review, and evidence-first exploration support.",
   "asset_kind": "profile",
   "agent_class": "mixed-team",
   "deployment_role": "primary",
@@ -25,6 +25,14 @@
       "advisory_model": "openai/gpt-5.4 high"
     },
     {
+      "id": "plan",
+      "seat": "subagent",
+      "agent_class": "mixed soul+skill",
+      "bundle": "demo-coding-team-plan",
+      "soul": "demo-coding-team-plan",
+      "advisory_model": "github-copilot/claude-opus-4.6 thinking"
+    },
+    {
       "id": "systems-architect",
       "seat": "subagent",
       "agent_class": "pure-soul",
@@ -41,14 +49,6 @@
       "advisory_model": "github-copilot/gpt-5.4 xhigh"
     },
     {
-      "id": "mcp-tooling-consultant",
-      "seat": "subagent",
-      "agent_class": "mixed soul+skill",
-      "bundle": "demo-coding-team-mcp-tooling-consultant",
-      "soul": "demo-coding-team-mcp-tooling-consultant",
-      "advisory_model": "github-copilot/claude-opus-4.6 thinking"
-    },
-    {
       "id": "phase-verifier",
       "seat": "subagent",
       "agent_class": "mixed soul+skill",
@@ -57,11 +57,11 @@
       "advisory_model": "github-copilot/claude-sonnet-4.6 thinking"
     },
     {
-      "id": "explore-evidence-operator",
+      "id": "explore",
       "seat": "subagent",
       "agent_class": "mixed soul+skill",
-      "bundle": "demo-coding-team-explore-evidence-operator",
-      "soul": "demo-coding-team-explore-evidence-operator",
+      "bundle": "demo-coding-team-explore",
+      "soul": "demo-coding-team-explore",
       "advisory_model": "github-copilot/gpt-5.4-mini xhigh"
     },
     {

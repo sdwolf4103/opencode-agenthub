@@ -15,7 +15,9 @@
     "variant": "thinking",
     "description": "Use this verifier only after a concrete file-backed phase artifact exists. It returns an independent PASS, FAIL, or PARTIAL verdict and must not modify project files.",
     "permission": {
-      "*": "allow"
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny"
     }
   },
   "metadata": {

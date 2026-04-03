@@ -16,7 +16,10 @@
     "variant": "thinking",
     "description": "Use this reviewer before implementation for a second opinion or after implementation for an independent final review. It returns review findings and risks, but it is not the phase-verifier and not the delivery host.",
     "permission": {
-      "*": "allow"
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny",
+      "bash": "deny"
     }
   },
   "metadata": {

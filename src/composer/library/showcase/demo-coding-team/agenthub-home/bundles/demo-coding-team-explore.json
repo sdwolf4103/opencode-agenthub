@@ -1,0 +1,30 @@
+{
+  "name": "demo-coding-team-explore",
+  "runtime": "native",
+  "soul": "demo-coding-team-explore",
+  "skills": [
+    "obra-superpowers-skills-systematic-debugging-skill",
+    "obra-superpowers-skills-verification-before-completion-skill"
+  ],
+  "mcp": [],
+  "agent": {
+    "name": "explore",
+    "mode": "subagent",
+    "hidden": false,
+    "model": "github-copilot/gpt-5.4-mini",
+    "variant": "xhigh",
+    "description": "Use this specialist for read-only exploration, behavior checks, and evidence gathering. It should return concrete observations and artifacts for the host, not make final success claims.",
+    "permission": {
+      "*": "allow",
+      "edit": "deny",
+      "write": "deny",
+      "bash": "deny"
+    }
+  },
+  "metadata": {
+    "team_namespace": "demo-coding-team",
+    "seat": "subagent",
+    "source_basis": "agency-agents Evidence Collector",
+    "advisory_model": "github-copilot/gpt-5.4-mini xhigh"
+  }
+}
