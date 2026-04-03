@@ -966,6 +966,11 @@ test("setup imports user native opencode overrides for managed agents", async ()
 		await writeFile(
 			nativeConfigPath,
 			`${JSON.stringify({
+				provider: {
+					ollama: {
+						endpoint: "http://127.0.0.1:11434",
+					},
+				},
 				model: "openai/gpt-5",
 				small_model: "openai/gpt-5-mini",
 				agent: {
@@ -994,6 +999,11 @@ test("setup imports user native opencode overrides for managed agents", async ()
 
 		const settingsPath = path.join(agentHubHome, "settings.json");
 		const settings = JSON.parse(await readFile(settingsPath, "utf8"));
+		expect(settings.opencode.provider).toEqual({
+			ollama: {
+				endpoint: "http://127.0.0.1:11434",
+			},
+		});
 		expect(settings.opencode.model).toBe("openai/gpt-5");
 		expect(settings.opencode.small_model).toBe("openai/gpt-5-mini");
 		expect(settings.agents.build.model).toBe("github-copilot/gpt-5");
@@ -1001,14 +1011,28 @@ test("setup imports user native opencode overrides for managed agents", async ()
 
 		const result = await composeWorkspace(workspace, "auto");
 		const opencodeConfigPath = path.join(result.configRoot, "opencode.jsonc");
+		const xdgConfigPath = path.join(result.configRoot, "xdg", "opencode", "opencode.json");
 		const opencodeConfig = parseGeneratedJson(
 			await readFile(opencodeConfigPath, "utf8"),
 		);
+		const xdgConfig = parseGeneratedJson(await readFile(xdgConfigPath, "utf8"));
 
+		expect(opencodeConfig.provider).toEqual({
+			ollama: {
+				endpoint: "http://127.0.0.1:11434",
+			},
+		});
 		expect(opencodeConfig.model).toBe("openai/gpt-5");
 		expect(opencodeConfig.small_model).toBe("openai/gpt-5-mini");
 		expect(opencodeConfig.agent.build.model).toBe("github-copilot/gpt-5");
 		expect(opencodeConfig.agent.plan.permission.bash).toBe("ask");
+		expect(xdgConfig.provider).toEqual(opencodeConfig.provider);
+		expect(xdgConfig.model).toBe(opencodeConfig.model);
+		expect(xdgConfig.small_model).toBe(opencodeConfig.small_model);
+		expect(xdgConfig.plugin).toEqual(opencodeConfig.plugin);
+		expect(xdgConfig.agent).toBeUndefined();
+		expect(xdgConfig.mcp).toBeUndefined();
+		expect(xdgConfig.default_agent).toBeUndefined();
 	} finally {
 		if (originalHome === undefined) delete process.env.HOME;
 		else process.env.HOME = originalHome;

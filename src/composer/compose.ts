@@ -773,6 +773,15 @@ const writeGeneratedRuntimeFiles = async ({
 
 	const xdgConfigText = `${toGeneratedHeader(source)}${JSON.stringify({
 		$schema: "https://opencode.ai/config.json",
+		...(opencodeConfig.provider && typeof opencodeConfig.provider === "object"
+			? { provider: opencodeConfig.provider }
+			: {}),
+		...(typeof opencodeConfig.model === "string" && opencodeConfig.model.trim().length > 0
+			? { model: opencodeConfig.model }
+			: {}),
+		...(typeof opencodeConfig.small_model === "string" && opencodeConfig.small_model.trim().length > 0
+			? { small_model: opencodeConfig.small_model }
+			: {}),
 		plugin: Array.isArray(opencodeConfig.plugin) ? opencodeConfig.plugin : [],
 	}, null, 2)}\n`;
 	await writeFile(
