@@ -2,6 +2,25 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.2.0] — 2026-04-04
+
+### Coding workflow upgrades
+
+- upgrade the built-in coding-team planning and execution flow with wave-aware plan writing and execution guidance
+- add built-in `agenthub-proactive-verify` and `agenthub-prepare-pr` skills for explicit verification and branch-based finishing workflows
+- keep the showcase `demo-coding-team` aligned with the stronger coding delivery protocol and verification checkpoints
+
+### Authoring lane
+
+- add a new direct authoring lane with built-in `write-skill`, `write-agent`, and `refine-hub-asset` skills
+- add a hub-local `validateSkillFrontmatter()` utility so skill frontmatter can be checked without relying on external tooling
+- register the authoring lane only for normal auto-mode installs while keeping HR Office focused on staffing and staging
+
+### Validation and install coverage
+
+- add validator tests, authoring-lane manifest tests, and release-regression coverage for the expanded auto-mode built-in manifest
+- verify the new assets through the full Bun test suite, smoke install/compose flows, and pack/build checks
+
 ## [0.1.5] — 2026-03-31
 
 ### Onboarding clarity and help
