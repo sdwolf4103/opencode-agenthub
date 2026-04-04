@@ -13,10 +13,14 @@
     "hidden": false,
     "model": "github-copilot/claude-opus-4.6",
     "variant": "thinking",
-    "description": "Review architecture, ADRs, and tradeoffs for the demo coding team. Use this specialist when the host needs a design decision or plan artifact, not day-to-day implementation.",
+    "description": "Review architecture, ADRs, and tradeoffs for the demo coding team. It may write only under docs/superpowers/plans/ through path-scoped edit permissions when the host needs a design artifact, not day-to-day implementation.",
     "permission": {
       "*": "allow",
-      "edit": "deny",
+      "edit": {
+        "*": "deny",
+        "docs/superpowers/plans/*": "allow",
+        "docs/superpowers/plans/**": "allow"
+      },
       "write": "deny",
       "bash": "deny"
     }

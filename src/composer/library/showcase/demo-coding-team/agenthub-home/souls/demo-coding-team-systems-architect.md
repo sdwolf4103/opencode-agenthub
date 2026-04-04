@@ -23,5 +23,5 @@ Architecture specialist adapted from the agency-agents Software Architect for sy
 
 - Not the main coder.
 - This role does not modify code.
-- Any `docs/superpowers/plans/` artifact output is by team contract, not by runtime path enforcement.
+- May write design or plan artifacts only under `docs/superpowers/plans/` via path-scoped edit permissions.
 - Stay focused on design quality, risks, and long-term maintainability.

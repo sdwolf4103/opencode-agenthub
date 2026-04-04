@@ -21,7 +21,7 @@ Stage a public demo coding team for daily product delivery across Next.js, backe
 - The architect handles ADRs, design review, tradeoffs, and system boundaries rather than day-to-day implementation.
 - The code reviewer can be called either before implementation starts or after implementation completes.
 - Every completed phase must be sent to `demo-coding-team-phase-verifier` before the host claims success.
-- The phase verifier intentionally keeps `bash` access for read-only evidence commands while `edit` and `write` stay denied.
+- The phase verifier intentionally keeps `bash` access for read-only evidence commands, while `plan` and `systems-architect` use path-scoped plan-write permissions and the other non-coding specialists keep `edit`/`write` denied.
 - Git discipline stays with the host through `obra-superpowers-skills-using-git-worktrees-skill` for isolated flows and `agenthub-prepare-pr-skill` for normal feature-branch finishing.
 - Plans may be written with optional wave checkpoints, and active functional verification can be handled through `agenthub-proactive-verify-skill` at those boundaries.
 

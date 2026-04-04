@@ -1,4 +1,4 @@
-import { chmod, cp, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { chmod, cp, mkdir, readdir, rm, stat, writeFile, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
@@ -357,13 +357,28 @@ export const seedHrShowcasePackageIfMissing = async (
 	if (!(await pathExists(sourceRoot))) return false;
 
 	const targetRoot = hrShowcasePackageRoot(hrRoot);
-	if (await pathExists(targetRoot)) return false;
-
 	const markerPath = hrShowcaseSeedMarkerPath(hrRoot);
-	if (await pathExists(markerPath)) return false;
+	const packageVersion = readPackageVersion();
+	let existingSeedVersion: string | undefined;
+	if (await pathExists(markerPath)) {
+		try {
+			const marker = JSON.parse(await readFile(markerPath, "utf-8")) as {
+				seededVersion?: string;
+			};
+			existingSeedVersion = marker.seededVersion;
+		} catch {
+			existingSeedVersion = undefined;
+		}
+	}
+	const targetExists = await pathExists(targetRoot);
+	const needsRefresh = !targetExists || existingSeedVersion !== packageVersion;
+	if (!needsRefresh) return false;
 
 	await mkdir(path.join(hrRoot, "staging"), { recursive: true });
 	await mkdir(path.dirname(markerPath), { recursive: true });
+	if (targetExists) {
+		await rm(targetRoot, { recursive: true, force: true });
+	}
 	await cp(sourceRoot, targetRoot, { recursive: true, force: true });
 	await writeFile(
 		markerPath,
@@ -371,6 +386,7 @@ export const seedHrShowcasePackageIfMissing = async (
 			{
 				packageId: hrShowcasePackageId,
 				seededAt: new Date().toISOString(),
+				seededVersion: packageVersion,
 				seedSource: "built-in-showcase",
 			},
 			null,
@@ -379,6 +395,10 @@ export const seedHrShowcasePackageIfMissing = async (
 		"utf-8",
 	);
 	return true;
+};
+
+export const syncHrShowcasePackage = async (hrRoot = defaultHrHome()): Promise<boolean> => {
+	return seedHrShowcasePackageIfMissing(hrRoot);
 };
 
 const copyLibraryReadme = async (targetRoot: string) => {

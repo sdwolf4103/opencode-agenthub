@@ -10,10 +10,12 @@ import {
 	installAgentHubHome,
 	installHrOfficeHome,
 	installHrOfficeHomeWithOptions,
+	seedHrShowcasePackageIfMissing,
 } from "../src/composer/bootstrap.js";
 import { buildBuiltinVersionManifest } from "../src/composer/builtin-assets.js";
 import { expandProfileAddSelections } from "../src/composer/capabilities.js";
 import { getDefaultProfilePlugins } from "../src/composer/defaults.js";
+import { readPackageVersion } from "../src/composer/package-version.js";
 import {
 	composeCustomizedAgent,
 	composeToolInjection,
@@ -2933,6 +2935,20 @@ test("first-run hr demo-coding-team bootstraps HR Office and composes the staged
 				"obra-superpowers-skills-brainstorming-skill",
 			]),
 		);
+		expect(opencodeConfig.agent.plan.permission.edit).toEqual({
+			"*": "deny",
+			"docs/superpowers/plans/*": "allow",
+			"docs/superpowers/plans/**": "allow",
+		});
+		expect(opencodeConfig.agent.plan.permission.write).toBe("deny");
+		expect(opencodeConfig.agent.plan.permission.bash).toBe("deny");
+		expect(opencodeConfig.agent["systems-architect"].permission.edit).toEqual({
+			"*": "deny",
+			"docs/superpowers/plans/*": "allow",
+			"docs/superpowers/plans/**": "allow",
+		});
+		expect(opencodeConfig.agent["systems-architect"].permission.write).toBe("deny");
+		expect(opencodeConfig.agent["systems-architect"].permission.bash).toBe("deny");
 		expect(runtimeConfig.agents["plan"].skills).toEqual(
 			expect.arrayContaining([
 				"obra-superpowers-skills-writing-plans-skill",
@@ -3019,6 +3035,92 @@ test("existing HR Office backfills the showcase staged team when it is missing",
 			),
 		).toBe(true);
 		await expectDemoShowcaseSkillSubset(demoStagingSkillsRoot(hrHome));
+	} finally {
+		await rm(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test("existing HR Office refreshes the managed showcase staged team when the seed is stale", async () => {
+	const tempRoot = await mkdtemp(path.join(os.tmpdir(), "agenthub-hr-showcase-refresh-"));
+	try {
+		const hrHome = path.join(tempRoot, "hr-home");
+		await installHrOfficeHomeWithOptions({ hrRoot: hrHome });
+
+		const planBundlePath = path.join(
+			hrHome,
+			"staging",
+			"demo-coding-team",
+			"agenthub-home",
+			"bundles",
+			"demo-coding-team-plan.json",
+		);
+		await writeFile(
+			planBundlePath,
+			`${JSON.stringify(
+				{
+					name: "demo-coding-team-plan",
+					runtime: "native",
+					soul: "demo-coding-team-plan",
+					skills: ["obra-superpowers-skills-writing-plans-skill"],
+					mcp: [],
+					agent: {
+						name: "plan",
+						mode: "subagent",
+						hidden: false,
+						model: "github-copilot/claude-opus-4.6",
+						variant: "thinking",
+						description: "stale showcase bundle",
+						permission: {
+							"*": "allow",
+							edit: "deny",
+							write: "deny",
+							bash: "deny",
+						},
+					},
+				},
+				null,
+				2,
+			)}\n`,
+			"utf8",
+		);
+		await writeFile(
+			hrShowcaseSeedMarkerPath(hrHome),
+			`${JSON.stringify(
+				{
+					packageId: "demo-coding-team",
+					seededAt: "2026-03-31T12:07:12.025Z",
+					seedSource: "built-in-showcase",
+				},
+				null,
+				2,
+			)}\n`,
+			"utf8",
+		);
+
+		const refreshed = await seedHrShowcasePackageIfMissing(hrHome);
+		expect(refreshed).toBe(true);
+
+		const refreshedPlanBundle = JSON.parse(await readFile(planBundlePath, "utf8")) as {
+			agent: {
+				permission: {
+					edit: Record<string, string>;
+					write: string;
+					bash: string;
+				};
+			};
+		};
+		expect(Object.keys(refreshedPlanBundle.agent.permission.edit)).toEqual([
+			"*",
+			"docs/superpowers/plans/*",
+			"docs/superpowers/plans/**",
+		]);
+		expect(refreshedPlanBundle.agent.permission.write).toBe("deny");
+		expect(refreshedPlanBundle.agent.permission.bash).toBe("deny");
+
+		const marker = JSON.parse(
+			await readFile(hrShowcaseSeedMarkerPath(hrHome), "utf8"),
+		) as { seededVersion?: string };
+		expect(marker.seededVersion).toBe(readPackageVersion());
 	} finally {
 		await rm(tempRoot, { recursive: true, force: true });
 	}

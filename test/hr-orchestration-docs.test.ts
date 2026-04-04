@@ -349,13 +349,19 @@ test("demo coding team docs define subagent continuity and clear subagent bundle
 	expect(profile).toContain('"demo-coding-team-explore"');
 	expect(profile).not.toContain('"demo-coding-team-explore-evidence-operator"');
 	expect(architectBundle).toContain("Review architecture, ADRs, and tradeoffs");
-	expect(architectBundle).toContain('"edit": "deny"');
+	expect(architectBundle).toContain('"edit": {');
+	expect(architectBundle).toContain('"docs/superpowers/plans/*": "allow"');
+	expect(architectBundle).toContain('"docs/superpowers/plans/**": "allow"');
+	expect(architectBundle).toContain('"*": "deny"');
 	expect(architectBundle).toContain('"write": "deny"');
 	expect(architectBundle).toContain('"bash": "deny"');
 	expect(frontendBundle).toContain("Use this specialist for Next.js UI, frontend flows, and plugin interface design");
 	expect(planBundle).toContain('"name": "demo-coding-team-plan"');
 	expect(planBundle).toContain('"name": "plan"');
-	expect(planBundle).toContain('"edit": "deny"');
+	expect(planBundle).toContain('"edit": {');
+	expect(planBundle).toContain('"docs/superpowers/plans/*": "allow"');
+	expect(planBundle).toContain('"docs/superpowers/plans/**": "allow"');
+	expect(planBundle).toContain('"*": "deny"');
 	expect(planBundle).toContain('"write": "deny"');
 	expect(planBundle).toContain('"bash": "deny"');
 	expect(exploreBundle).toContain('"name": "demo-coding-team-explore"');
@@ -387,6 +393,7 @@ test("demo coding team inventory docs reflect the hardened role set", async () =
 	expect(promotionMemo).not.toContain("mcp-tooling-consultant");
 	expect(finalChecklist).toContain("No MCP consultant bundle references remain.");
 	expect(finalChecklist).toContain("Canonical explore naming is used throughout the package.");
+	expect(finalChecklist).toContain("path-scoped plan-write permissions");
 });
 
 test("demo coding team souls harden non-coding specialists and remove MCP guidance", async () => {
@@ -411,8 +418,10 @@ test("demo coding team souls harden non-coding specialists and remove MCP guidan
 
 	expect(planSoul).toContain("Do not implement code");
 	expect(planSoul).toContain("docs/superpowers/plans/");
+	expect(planSoul).toContain("path-scoped edit permissions");
 	expect(architectSoul).toContain("does not modify code");
 	expect(architectSoul).toContain("docs/superpowers/plans/");
+	expect(architectSoul).toContain("path-scoped edit permissions");
 	expect(exploreSoul).toContain("Do not implement fixes");
 	expect(exploreSoul).toContain("Do not act as the final verifier");
 	expect(reviewerSoul).toContain("architecture gaps");

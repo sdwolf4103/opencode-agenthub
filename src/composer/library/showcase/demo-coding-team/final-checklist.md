@@ -10,7 +10,7 @@ READY FOR HUMAN CONFIRMATION
 - Coding-delivery-lead bundle includes `agenthub-proactive-verify` and `agenthub-prepare-pr` alongside the existing execution and git hygiene skills.
 - No MCP consultant bundle references remain.
 - Canonical explore naming is used throughout the package.
-- Non-coding specialist bundles explicitly harden permissions; verifier intentionally retains bash for evidence commands while edit/write remain denied.
+- Non-coding specialist bundles explicitly harden permissions; `plan` and `systems-architect` use path-scoped plan-write permissions while verifier retains bash for evidence commands and other non-coding specialists remain edit/write denied.
 - Provenance is documented in the promotion memo and worker card.
 - Verifier handoff only happens after a concrete file artifact exists for the claimed phase.
 - Preferred test path: `agenthub hr demo-coding-team`.

@@ -2,6 +2,23 @@
 
 All notable changes to `opencode-agenthub` will be documented here.
 
+## [0.2.1] — 2026-04-04
+
+### Path-scoped planning artifacts
+
+- allow the `plan` and `systems-architect` specialists in the built-in coding showcase to write only under `docs/superpowers/plans/` through OpenCode native path-scoped `edit` permissions
+- keep broader file modification denied for those non-coding specialists while preserving explicit `bash` denial
+- align showcase souls, promotion memo, final checklist, and staged package assets with the new permission model
+
+### Showcase refresh hardening
+
+- fix the built-in HR showcase seeding logic so stale locally seeded `demo-coding-team` packages refresh automatically when the built-in version changes
+- add regression coverage proving old seeded showcase copies are replaced with the new built-in package contents
+
+### Verification
+
+- verify the permission and reseed changes with documentation tests, smoke compose tests, the full Bun suite, staged package validation, and an independent verifier pass
+
 ## [0.2.0] — 2026-04-04
 
 ### Coding workflow upgrades

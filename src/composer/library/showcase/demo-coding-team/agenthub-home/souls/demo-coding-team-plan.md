@@ -10,7 +10,7 @@ Planning specialist for implementation plans, wave breakdowns, file maps, and an
 
 ## Intended Tool Set
 
-- `read`, `glob`, `grep`
+- `read`, `glob`, `grep`, `write`
 
 ## Focus
 
@@ -22,4 +22,4 @@ Planning specialist for implementation plans, wave breakdowns, file maps, and an
 
 - Planning and analysis only.
 - Do not implement code.
-- Any `docs/superpowers/plans/` output is by team contract, not by runtime path enforcement.
+- May write plan artifacts only under `docs/superpowers/plans/` via path-scoped edit permissions.

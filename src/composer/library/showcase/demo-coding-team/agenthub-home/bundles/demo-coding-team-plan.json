@@ -12,10 +12,14 @@
     "hidden": false,
     "model": "github-copilot/claude-opus-4.6",
     "variant": "thinking",
-    "description": "Use this specialist to produce implementation plans and analysis artifacts. It is non-coding and may only target docs/superpowers/plans/ by contract, not by runtime path enforcement.",
+    "description": "Use this specialist to produce implementation plans and analysis artifacts. It is non-coding and may write only under docs/superpowers/plans/ through path-scoped edit permissions.",
     "permission": {
       "*": "allow",
-      "edit": "deny",
+      "edit": {
+        "*": "deny",
+        "docs/superpowers/plans/*": "allow",
+        "docs/superpowers/plans/**": "allow"
+      },
       "write": "deny",
       "bash": "deny"
     }
