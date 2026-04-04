@@ -108,6 +108,10 @@ Start here:
 agenthub hr
 ```
 
+![HR Office in OpenCode](docs/images/hr-office-screenshot.png)
+
+*HR Office running inside OpenCode to help source and stage a stronger team before promote.*
+
 After bootstrap, a runnable demo team is staged for you:
 
 ```bash
@@ -220,6 +224,10 @@ bundles/
 profiles/
 settings.json
 ```
+
+![Personal Home layout](docs/images/personal-home-layout.png)
+
+*Example `agenthub-home/` layout after `agenthub setup auto`, showing the core bundle / profile / skill / soul asset folders.*
 
 Created only when you actually use them:
 
